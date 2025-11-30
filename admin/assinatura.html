@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guia Cerrado – Assinatura</title>
+
+  <style>
+    :root {
+      --bg-main: #000000;
+      --bg-card: #111827;
+      --bg-soft: #020617;
+      --accent: #e50914;        /* vermelho Netflix */
+      --accent-hover: #f6121d;
+      --muted: #9ca3af;
+      --border-soft: #374151;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+      background: radial-gradient(circle at top, #111827 0, #020617 45%, #000 100%);
+      color: #f9fafb;
+      min-height: 100vh;
+    }
+
+    .page-shell {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
+
+    /* TOPO */
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+
+    .logo-block {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-block img {
+      height: 40px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .logo-text {
+      font-size: 1.1rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .back-link {
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.9);
+      cursor: pointer;
+      transition: 0.2s;
+      white-space: nowrap;
+    }
+
+    .back-link:hover {
+      border-color: var(--accent);
+      color: #fef2f2;
+    }
+
+    /* CABEÇALHO ETAPA */
+
+    .step-header {
+      max-width: 520px;
+      margin-bottom: 22px;
+    }
+
+    .step-indicator {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .step-indicator span {
+      color: #f9fafb;
+      font-weight: 600;
+    }
+
+    .step-title {
+      font-size: 1.7rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .step-subtitle {
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    /* GRID PRINCIPAL */
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.1fr);
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    @media (max-width: 840px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* CARD FORM */
+
+    .checkout-card {
+      background: radial-gradient(circle at top left, rgba(15,23,42,0.92), rgba(2,6,23,0.98));
+      border-radius: 16px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      box-shadow: 0 22px 60px rgba(0, 0, 0, 0.9);
+      padding: 18px 18px 20px;
+    }
+
+    .checkout-card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+    }
+
+    .plan-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.75);
+      border: 1px solid rgba(248, 250, 252, 0.1);
+      font-size: 0.75rem;
+      margin-bottom: 12px;
+    }
+
+    .plan-chip span.dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34,197,94,0.15);
+    }
+
+    .field-group {
+      margin-bottom: 10px;
+    }
+
+    .field-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .field-input {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #4b5563;
+      background: #020617;
+      padding: 9px 10px;
+      color: #e5e7eb;
+      font-size: 0.9rem;
+    }
+
+    .field-input::placeholder {
+      color: #6b7280;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    @media (max-width: 640px) {
+      .field-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .doc-hint {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .terms-row {
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+    }
+
+    .terms-row input[type="checkbox"] {
+      margin-top: 3px;
+    }
+
+    .terms-row a {
+      color: #e5e7eb;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .submit-btn {
+      margin-top: 16px;
+      width: 100%;
+      border-radius: 999px;
+      border: none;
+      background: var(--accent);
+      color: #ffffff;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 13px 16px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: 0.18s;
+      box-shadow: 0 16px 32px rgba(239, 68, 68, 0.65);
+    }
+
+    .submit-btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    .secure-note {
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .secure-lock {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      border: 1px solid #22c55e;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      color: #22c55e;
+    }
+
+    .error-message {
+      margin-top: 10px;
+      font-size: 0.8rem;
+      color: #fecaca;
+      background: rgba(239, 68, 68, 0.15);
+      border-radius: 6px;
+      padding: 6px 8px;
+      border: 1px solid rgba(248, 113, 113, 0.7);
+      display: none;
+    }
+
+    /* CARD RESUMO */
+
+    .summary-card {
+      background: rgba(15,23,42,0.96);
+      border-radius: 16px;
+      border: 1px solid rgba(55, 65, 81, 0.95);
+      padding: 16px 16px 18px;
+      box-shadow: 0 22px 60px rgba(0, 0, 0, 0.95);
+    }
+
+    .summary-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .summary-plan-name {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .summary-price {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .summary-price span {
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .summary-total {
+      font-size: 0.9rem;
+      margin-top: 4px;
+      color: var(--muted);
+    }
+
+    .summary-line {
+      height: 1px;
+      background: linear-gradient(to right, transparent, #4b5563, transparent);
+      margin: 12px 0;
+    }
+
+    .summary-list {
+      list-style: none;
+      display: grid;
+      gap: 4px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .summary-list li::before {
+      content: "✔";
+      color: #22c55e;
+      margin-right: 6px;
+    }
+
+    .summary-note {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <!-- TOPO -->
+    <header class="top-bar">
+      <div class="logo-block">
+        <!-- assinatura.html está em /admin → volta 1 pasta para chegar em /recursos -->
+        <img src="../recursos/logo.png" alt="Guia Cerrado" />
+        <span class="logo-text">GUIA CERRADO</span>
+      </div>
+
+      <a href="../index.html" class="back-link">
+        ← Página inicial
+      </a>
+    </header>
+
+    <!-- CABEÇALHO -->
+    <section class="step-header">
+      <div class="step-indicator">
+        ETAPA <span>1</span> DE <span>2</span>
+      </div>
+      <h1 class="step-title">Finalize sua assinatura</h1>
+      <p class="step-subtitle">
+        Confirme seus dados e na próxima etapa você será redirecionado para o pagamento seguro
+        processado pela Pagar.me.
+      </p>
+    </section>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <section class="main-grid">
+      <!-- CARD ESQUERDA: FORM -->
+      <div class="checkout-card">
+        <div class="plan-chip" id="planChip">
+          <span class="dot"></span>
+          <span id="planChipText">Membro Guia Cerrado • R$ 29,99 / mês</span>
+        </div>
+
+        <h2>Dados do assinante</h2>
+
+        <form id="checkoutForm" autocomplete="on">
+          <div class="field-group">
+            <label class="field-label" for="nome">Nome completo / Razão social</label>
+            <input class="field-input" type="text" id="nome" name="nome" placeholder="Como consta no documento" required />
+          </div>
+
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label" for="documento">CPF ou CNPJ</label>
+              <input class="field-input" type="text" id="documento" name="documento" placeholder="Apenas números" required />
+              <div class="doc-hint">Usado para identificação e emissão fiscal.</div>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="email">E-mail</label>
+              <input class="field-input" type="email" id="email" name="email" placeholder="voce@exemplo.com" required />
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label" for="telefone">WhatsApp / Telefone</label>
+              <input class="field-input" type="tel" id="telefone" name="telefone" placeholder="(00) 90000-0000" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="cep">CEP</label>
+              <input class="field-input" type="text" id="cep" name="cep" placeholder="00000-000" />
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="endereco">Endereço</label>
+            <input class="field-input" type="text" id="endereco" name="endereco" placeholder="Rua, número, complemento, bairro" />
+          </div>
+
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label" for="cidade">Cidade</label>
+              <input class="field-input" type="text" id="cidade" name="cidade" placeholder="Goiânia" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="estado">Estado (UF)</label>
+              <input class="field-input" type="text" id="estado" name="estado" placeholder="GO" maxlength="2" />
+            </div>
+          </div>
+
+          <div class="terms-row">
+            <input type="checkbox" id="aceite" />
+            <label for="aceite">
+              Concordo com os
+              <a href="javascript:void(0)">Termos de uso</a> e a
+              <a href="javascript:void(0)">Política de privacidade</a> do Guia Cerrado.
+            </label>
+          </div>
+
+          <button type="submit" class="submit-btn">
+            CONTINUAR PARA PAGAMENTO
+          </button>
+
+          <div class="secure-note">
+            <span class="secure-lock">🔒</span>
+            Seus dados de pagamento serão processados com segurança pela Pagar.me.
+          </div>
+
+          <div id="errorBox" class="error-message"></div>
+        </form>
+      </div>
+
+      <!-- CARD DIREITA: RESUMO -->
+      <aside class="summary-card">
+        <div class="summary-label">Resumo do plano</div>
+        <div id="summaryPlanName" class="summary-plan-name">
+          Membro Guia Cerrado
+        </div>
+        <div id="summaryPrice" class="summary-price">
+          R$ 29,99 <span>/ mês</span>
+        </div>
+        <div id="summaryTotal" class="summary-total">
+          Cobrança recorrente por 12 meses.
+        </div>
+
+        <div class="summary-line"></div>
+
+        <ul class="summary-list">
+          <li>Acesso completo à curadoria gastronômica do Cerrado.</li>
+          <li>Experiências selecionadas, listas exclusivas e bastidores.</li>
+          <li>Atualizações constantes de restaurantes e roteiros.</li>
+          <li>Cancelamento simples, sem burocracia escondida.</li>
+        </ul>
+
+        <div class="summary-line"></div>
+
+        <p class="summary-note">
+          Na próxima etapa, o pedido será criado na Pagar.me e você escolherá a forma
+          de pagamento (cartão, Pix ou boleto), com cobranças mensais automáticas
+          por até 12 meses.
+        </p>
+      </aside>
+    </section>
+  </div>
+
+  <script>
+    // Lê o tipo de assinatura: localStorage → query param → default membro
+    function getTipoAssinatura() {
+      const lsTipo = localStorage.getItem("tipo_assinatura");
+      if (lsTipo === "restaurante" || lsTipo === "membro") return lsTipo;
+
+      const params = new URLSearchParams(window.location.search);
+      const urlTipo = params.get("tipo");
+      if (urlTipo === "restaurante" || urlTipo === "membro") return urlTipo;
+
+      return "membro";
+    }
+
+    const tipoAssinatura = getTipoAssinatura();
+
+    // Define dados do plano
+    const planConfig = tipoAssinatura === "restaurante"
+      ? {
+          id: "restaurante",
+          nome: "Restaurante parceiro – Guia Cerrado",
+          precoCents: 10000,               // R$ 100,00
+          precoTexto: "R$ 100,00",
+          cicloTexto: "/ mês",
+          resumoTotal: "Cobrança recorrente mensal por 12 meses."
+        }
+      : {
+          id: "membro",
+          nome: "Membro Guia Cerrado",
+          precoCents: 2999,                // R$ 29,99
+          precoTexto: "R$ 29,99",
+          cicloTexto: "/ mês",
+          resumoTotal: "Cobrança recorrente mensal por 12 meses."
+        };
+
+    // Atualiza textos de UI
+    const planChipText = document.getElementById("planChipText");
+    const summaryPlanName = document.getElementById("summaryPlanName");
+    const summaryPrice = document.getElementById("summaryPrice");
+    const summaryTotal = document.getElementById("summaryTotal");
+    const errorBox = document.getElementById("errorBox");
+
+    planChipText.textContent = `${planConfig.nome} • ${planConfig.precoTexto} ${planConfig.cicloTexto}`;
+    summaryPlanName.textContent = planConfig.nome;
+    summaryPrice.innerHTML = `${planConfig.precoTexto} <span>${planConfig.cicloTexto}</span>`;
+    summaryTotal.textContent = planConfig.resumoTotal;
+
+    // Form / validação básica
+    const checkoutForm = document.getElementById("checkoutForm");
+
+    checkoutForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      errorBox.style.display = "none";
+      errorBox.textContent = "";
+
+      const nome = checkoutForm.nome.value.trim();
+      const documento = checkoutForm.documento.value.trim();
+      const email = checkoutForm.email.value.trim();
+      const telefone = checkoutForm.telefone.value.trim();
+      const cep = checkoutForm.cep.value.trim();
+      const endereco = checkoutForm.endereco.value.trim();
+      const cidade = checkoutForm.cidade.value.trim();
+      const estado = checkoutForm.estado.value.trim();
+      const aceite = document.getElementById("aceite").checked;
+
+      if (!nome || !documento || !email) {
+        showError("Preencha pelo menos nome, CPF/CNPJ e e-mail para continuar.");
+        return;
+      }
+
+      if (!aceite) {
+        showError("Você precisa aceitar os termos de uso para continuar.");
+        return;
+      }
+
+      // Monta payload no formato que o backend vai usar com a Pagar.me
+      const payload = {
+        plan_type: planConfig.id,         // "membro" ou "restaurante"
+        amount_cents: planConfig.precoCents,
+        recurrence_months: 12,
+        customer: {
+          name: nome,
+          email: email,
+          document: documento,
+          phone: telefone,
+          address: {
+            zip_code: cep,
+            line_1: endereco,
+            city: cidade,
+            state: estado
+          }
+        }
+      };
+
+      console.log("Payload pronto para criar pedido Pagar.me:", payload);
+
+      // Aqui, na próxima etapa, entra o backend:
+      // fetch('/api/criar-assinatura', { method: 'POST', headers: {...}, body: JSON.stringify(payload) })
+
+      alert("Front pronto. Próximo passo: integrar este payload com a API da Pagar.me.");
+    });
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.style.display = "block";
+    }
+  </script>
+</body>
+</html>

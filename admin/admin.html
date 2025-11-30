@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guia Cerrado - Painel Administrativo</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #000;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      background: rgba(15, 23, 42, 0.9);
+      padding: 20px 0;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      position: relative;
+      z-index: 10;
+    }
+
+    header button {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 30px;
+      color: #fff;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 10px 25px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    header button:hover {
+      background: #dc2626;
+      border-color: #dc2626;
+    }
+
+    /* Botão voltar */
+    .btn-voltar {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.6);
+      color: #f87171;
+      font-weight: 600;
+      border-radius: 30px;
+      padding: 10px 22px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    .btn-voltar:hover {
+      background: #ef4444;
+      color: #fff;
+      border-color: #ef4444;
+      box-shadow: 0 0 15px rgba(239,68,68,0.4);
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 30px;
+      overflow-y: auto;
+      background: radial-gradient(circle at top, #111827 0, #020617 50%, #000 100%);
+    }
+
+    iframe {
+      width: 100%;
+      height: 80vh;
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      background-color: rgba(15, 23, 42, 0.85);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <button class="btn-voltar" onclick="voltarPagina()">← Voltar</button>
+    <button onclick="loadPage('restaurantes.html')">Restaurantes</button>
+    <button onclick="loadPage('financeiro.html')">Financeiro</button>
+    <button onclick="loadPage('analitica.html')">Analítica</button>
+    <button onclick="loadPage('aprovacoes.html')">Aprovações</button>
+  </header>
+
+  <main>
+    <iframe id="contentFrame" src="restaurantes.html"></iframe>
+  </main>
+
+  <script>
+    function loadPage(page) {
+      document.getElementById('contentFrame').src = page;
+    }
+
+    function voltarPagina() {
+      // se estiver dentro de um iframe anterior ou vindo de outra página:
+      if (document.referrer) {
+        window.history.back();
+      } else {
+        // fallback para o index.html
+        window.location.href = 'index.html';
+      }
+    }
+  </script>
+
+</body>
+</html>

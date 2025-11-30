@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guia Cerrado – Restaurantes</title>
+
+  <!-- Supabase UMD v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #020617;
+      --card: rgba(15,23,42,0.95);
+      --card-soft: rgba(15,23,42,0.85);
+      --border: rgba(148,163,184,0.5);
+      --accent: #f97316;
+      --accent-soft: rgba(249,115,22,0.3);
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #111827 0, #020617 45%, #000 100%);
+      color: #f9fafb;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+      padding: 20px;
+    }
+
+    .page-wrapper {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 20px;
+    }
+
+    .section-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: rgba(148,163,184,0.9);
+      margin-bottom: 18px;
+    }
+
+    /* LADO ESQUERDO – LISTA */
+
+    .sidebar {
+      background: var(--card);
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      box-shadow: 0 18px 50px rgba(0,0,0,0.8);
+      padding: 16px 16px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .sidebar-title {
+      font-size: 0.9rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(209,213,219,0.95);
+    }
+
+    .btn-small {
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.8);
+      background: rgba(15,23,42,0.9);
+      color: #e5e7eb;
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      transition: 0.18s ease;
+      white-space: nowrap;
+    }
+
+    .btn-small:hover {
+      border-color: var(--accent);
+      color: #fed7aa;
+      box-shadow: 0 0 0 1px var(--accent-soft);
+    }
+
+    .search-box {
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.6);
+      background: rgba(15,23,42,0.95);
+      padding: 7px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .search-box input {
+      border: none;
+      background: transparent;
+      color: #e5e7eb;
+      font-size: 0.8rem;
+      width: 100%;
+      outline: none;
+    }
+
+    .search-box input::placeholder {
+      color: rgba(148,163,184,0.8);
+    }
+
+    .list {
+      overflow-y: auto;
+      max-height: 520px;
+      padding-right: 4px;
+    }
+
+    .list::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .list::-webkit-scrollbar-thumb {
+      background: rgba(148,163,184,0.7);
+      border-radius: 999px;
+    }
+
+    .restaurant-item {
+      padding: 10px 10px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: rgba(15,23,42,0.7);
+      cursor: pointer;
+      margin-bottom: 6px;
+      transition: 0.16s ease;
+    }
+
+    .restaurant-item:hover {
+      border-color: rgba(148,163,184,0.7);
+      background: rgba(15,23,42,0.9);
+    }
+
+    .restaurant-item.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-soft);
+      background: rgba(15,23,42,0.98);
+    }
+
+    .restaurant-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .restaurant-meta {
+      margin-top: 2px;
+      font-size: 0.75rem;
+      color: rgba(148,163,184,0.95);
+    }
+
+    /* LADO DIREITO – FORMULÁRIO */
+
+    .form-card {
+      background: var(--card-soft);
+      border-radius: 22px;
+      border: 1px solid var(--border);
+      box-shadow: 0 24px 70px rgba(0,0,0,0.85);
+      padding: 18px 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: rgba(148,163,184,0.95);
+    }
+
+    .field-input,
+    .field-textarea {
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.65);
+      background: rgba(15,23,42,0.96);
+      color: #e5e7eb;
+      padding: 9px 13px;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+    }
+
+    .field-input::placeholder,
+    .field-textarea::placeholder {
+      color: rgba(148,163,184,0.75);
+    }
+
+    .field-input:focus,
+    .field-textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-soft);
+      background: rgba(15,23,42,0.99);
+    }
+
+    .field-textarea {
+      border-radius: 18px;
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .image-slot {
+      background: rgba(15,23,42,0.9);
+      border-radius: 14px;
+      border: 1px dashed rgba(148,163,184,0.7);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .image-preview {
+      width: 100%;
+      height: 80px;
+      border-radius: 10px;
+      background: #020617;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      border: 1px solid rgba(15,23,42,1);
+    }
+
+    .image-url {
+      border-radius: 999px;
+      border: 1px solid rgba(55,65,81,0.9);
+      background: rgba(15,23,42,0.95);
+      color: #e5e7eb;
+      padding: 6px 9px;
+      font-size: 0.75rem;
+      outline: none;
+    }
+
+    .image-url::placeholder {
+      color: rgba(148,163,184,0.75);
+    }
+
+    .image-file {
+      font-size: 0.75rem;
+      color: #e5e7eb;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 0;
+    }
+
+    .image-helper {
+      font-size: 0.72rem;
+      color: rgba(148,163,184,0.95);
+    }
+
+    .form-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .btn-main {
+      border-radius: 999px;
+      border: none;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      cursor: pointer;
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      color: #f9fafb;
+      box-shadow:
+        0 18px 48px rgba(0,0,0,0.9),
+        0 0 0 1px rgba(15,23,42,1);
+      transition: 0.18s ease;
+      white-space: nowrap;
+    }
+
+    .btn-main:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 22px 60px rgba(249,115,22,0.45),
+        0 0 0 1px rgba(15,23,42,1);
+      filter: brightness(1.05);
+    }
+
+    .btn-main:active {
+      transform: translateY(0);
+      box-shadow:
+        0 12px 32px rgba(0,0,0,0.9),
+        0 0 0 1px rgba(15,23,42,1);
+    }
+
+    .btn-danger {
+      border-radius: 999px;
+      border: 1px solid rgba(248,113,113,0.9);
+      padding: 8px 16px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      background: rgba(127,29,29,0.85);
+      color: #fee2e2;
+      transition: 0.18s ease;
+      white-space: nowrap;
+    }
+
+    .btn-danger:hover {
+      background: var(--danger);
+      color: #fff;
+      box-shadow: 0 0 0 1px rgba(248,113,113,0.7);
+    }
+
+    .helper-text {
+      font-size: 0.78rem;
+      color: rgba(148,163,184,0.95);
+    }
+
+    .status-message {
+      font-size: 0.8rem;
+      color: #bbf7d0;
+      min-height: 1.1em;
+    }
+
+    .status-error {
+      color: #fecaca;
+    }
+
+    @media (max-width: 900px) {
+      .page-wrapper {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .sidebar {
+        max-height: 260px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 14px;
+      }
+      .grid-2 {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .grid-3 {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    <!-- LISTA -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Restaurantes</div>
+        <button class="btn-small" type="button" id="btnNovo">Novo</button>
+      </div>
+
+      <div class="search-box">
+        <span style="font-size:0.9rem;">🔎</span>
+        <input id="searchInput" type="text" placeholder="Buscar por nome..." />
+      </div>
+
+      <div id="listaRestaurantes" class="list"></div>
+    </aside>
+
+    <!-- FORMULÁRIO -->
+    <section class="form-card">
+      <div>
+        <div class="section-title">Cadastro de estabelecimentos</div>
+        <div class="subtitle">
+          Preencha os dados do restaurante, adicione as imagens e escreva a resenha e a nota editorial.
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label class="field-label" for="nome">Nome do restaurante</label>
+          <input id="nome" class="field-input" type="text" placeholder="Ex.: Casa do Cerrado" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="telefone">Telefone</label>
+          <input id="telefone" class="field-input" type="text" placeholder="(62) 99999-0000" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="endereco">Endereço</label>
+          <input id="endereco" class="field-input" type="text" placeholder="Rua, número, bairro, cidade" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="total_visitas">Total de visitas</label>
+          <input id="total_visitas" class="field-input" type="number" min="0" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="maps_link">Link do Google Maps</label>
+        <input id="maps_link" class="field-input" type="url" placeholder="https://maps.google.com/..." />
+        <div class="helper-text">Cole aqui o link direto do endereço no Google Maps.</div>
+      </div>
+
+      <div class="grid-3">
+        <!-- 5 slots de imagem -->
+        <div class="image-slot">
+          <div class="field-label">Imagem 1</div>
+          <div id="preview1" class="image-preview"></div>
+          <input id="imagem1" class="image-url" type="text" placeholder="URL da imagem 1 (opcional)" />
+          <input id="file1" class="image-file" type="file" accept="image/*" />
+          <div class="image-helper">Envie um arquivo local ou cole uma URL.</div>
+        </div>
+
+        <div class="image-slot">
+          <div class="field-label">Imagem 2</div>
+          <div id="preview2" class="image-preview"></div>
+          <input id="imagem2" class="image-url" type="text" placeholder="URL da imagem 2 (opcional)" />
+          <input id="file2" class="image-file" type="file" accept="image/*" />
+          <div class="image-helper">Envie um arquivo local ou cole uma URL.</div>
+        </div>
+
+        <div class="image-slot">
+          <div class="field-label">Imagem 3</div>
+          <div id="preview3" class="image-preview"></div>
+          <input id="imagem3" class="image-url" type="text" placeholder="URL da imagem 3 (opcional)" />
+          <input id="file3" class="image-file" type="file" accept="image/*" />
+          <div class="image-helper">Envie um arquivo local ou cole uma URL.</div>
+        </div>
+
+        <div class="image-slot">
+          <div class="field-label">Imagem 4</div>
+          <div id="preview4" class="image-preview"></div>
+          <input id="imagem4" class="image-url" type="text" placeholder="URL da imagem 4 (opcional)" />
+          <input id="file4" class="image-file" type="file" accept="image/*" />
+          <div class="image-helper">Envie um arquivo local ou cole uma URL.</div>
+        </div>
+
+        <div class="image-slot">
+          <div class="field-label">Imagem 5</div>
+          <div id="preview5" class="image-preview"></div>
+          <input id="imagem5" class="image-url" type="text" placeholder="URL da imagem 5 (opcional)" />
+          <input id="file5" class="image-file" type="file" accept="image/*" />
+          <div class="image-helper">Envie um arquivo local ou cole uma URL.</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="resenha">Resenha textual</label>
+        <textarea id="resenha" class="field-textarea" placeholder="Conte a história, o clima e os destaques do restaurante..."></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="nota_editorial">Nota / leitura da curadoria</label>
+        <textarea id="nota_editorial" class="field-textarea" placeholder="Impressões da curadoria, recomendações especiais, observações..."></textarea>
+      </div>
+
+      <div class="form-footer">
+        <div>
+          <div id="statusMsg" class="status-message"></div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button id="btnExcluir" class="btn-danger" type="button">Excluir perfil</button>
+          <button id="btnSalvar" class="btn-main" type="button">Salvar</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // CONFIG SUPABASE
+    const SUPABASE_URL = "https://kgppqiqnxwxemqyrlfum.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_lFw3tfDJap3R8HvO2Gv14w_1BGA-nYQ";
+    const STORAGE_BUCKET = "restaurantes-imagens"; // crie esse bucket no Supabase
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Estado atual
+    let currentId = null; // id do restaurante selecionado
+    let allRestaurants = [];
+
+    const listaRestaurantes = document.getElementById("listaRestaurantes");
+    const searchInput = document.getElementById("searchInput");
+    const statusMsg = document.getElementById("statusMsg");
+
+    // Campos do formulário
+    const nomeEl = document.getElementById("nome");
+    const telefoneEl = document.getElementById("telefone");
+    const enderecoEl = document.getElementById("endereco");
+    const totalVisitasEl = document.getElementById("total_visitas");
+    const mapsLinkEl = document.getElementById("maps_link");
+    const resenhaEl = document.getElementById("resenha");
+    const notaEl = document.getElementById("nota_editorial");
+
+    const imgInputs = [
+      document.getElementById("imagem1"),
+      document.getElementById("imagem2"),
+      document.getElementById("imagem3"),
+      document.getElementById("imagem4"),
+      document.getElementById("imagem5"),
+    ];
+    const imgPreviews = [
+      document.getElementById("preview1"),
+      document.getElementById("preview2"),
+      document.getElementById("preview3"),
+      document.getElementById("preview4"),
+      document.getElementById("preview5"),
+    ];
+    const fileInputs = [
+      document.getElementById("file1"),
+      document.getElementById("file2"),
+      document.getElementById("file3"),
+      document.getElementById("file4"),
+      document.getElementById("file5"),
+    ];
+
+    // Atualiza previews quando digita URLs manualmente
+    imgInputs.forEach((input, idx) => {
+      input.addEventListener("input", () => {
+        const url = input.value.trim();
+        imgPreviews[idx].style.backgroundImage = url ? `url('${url}')` : "none";
+      });
+    });
+
+    // Upload de arquivo local para o Storage do Supabase
+    async function uploadImageFromFile(index, file) {
+      if (!file) return;
+
+      statusMsg.textContent = "Enviando imagem...";
+      statusMsg.classList.remove("status-error");
+
+      const ext = file.name.split(".").pop();
+      const fileName = `${Date.now()}_${index + 1}.${ext}`;
+      const filePath = `restaurantes/${fileName}`;
+
+      const { error: uploadError } = await supabaseClient
+        .storage
+        .from(STORAGE_BUCKET)
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+        console.error(uploadError);
+        statusMsg.textContent = "Erro ao enviar imagem.";
+        statusMsg.classList.add("status-error");
+        return;
+      }
+
+      const { data: publicData } = supabaseClient
+        .storage
+        .from(STORAGE_BUCKET)
+        .getPublicUrl(filePath);
+
+      const publicUrl = publicData.publicUrl;
+      imgInputs[index].value = publicUrl;
+      imgPreviews[index].style.backgroundImage = `url('${publicUrl}')`;
+
+      statusMsg.textContent = "Imagem enviada com sucesso.";
+      statusMsg.classList.remove("status-error");
+    }
+
+    // Listener para inputs de arquivo
+    fileInputs.forEach((fileInput, idx) => {
+      fileInput.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          await uploadImageFromFile(idx, file);
+        }
+      });
+    });
+
+    async function carregarLista() {
+      statusMsg.textContent = "Carregando restaurantes...";
+      const { data, error } = await supabaseClient
+        .from("restaurantes")
+        .select("id, nome, total_visitas")
+        .order("nome", { ascending: true });
+
+      if (error) {
+        console.error(error);
+        statusMsg.textContent = "Erro ao carregar lista.";
+        statusMsg.classList.add("status-error");
+        return;
+      }
+
+      allRestaurants = data || [];
+      renderLista();
+      statusMsg.textContent = "";
+      statusMsg.classList.remove("status-error");
+    }
+
+    function renderLista() {
+      const filtro = (searchInput.value || "").toLowerCase().trim();
+
+      listaRestaurantes.innerHTML = "";
+
+      const filtrados = allRestaurants.filter(r =>
+        !filtro || (r.nome || "").toLowerCase().includes(filtro)
+      );
+
+      if (!filtrados.length) {
+        const vazio = document.createElement("div");
+        vazio.className = "helper-text";
+        vazio.style.marginTop = "8px";
+        vazio.textContent = "Nenhum restaurante encontrado.";
+        listaRestaurantes.appendChild(vazio);
+        return;
+      }
+
+      filtrados.forEach(r => {
+        const item = document.createElement("div");
+        item.className = "restaurant-item" + (r.id === currentId ? " active" : "");
+        item.dataset.id = r.id;
+
+        const nome = document.createElement("div");
+        nome.className = "restaurant-name";
+        nome.textContent = r.nome || "Sem nome";
+
+        const meta = document.createElement("div");
+        meta.className = "restaurant-meta";
+        const visitas = r.total_visitas ?? 0;
+        meta.textContent = visitas === 1 ? "1 visita" : `${visitas} visitas`;
+
+        item.appendChild(nome);
+        item.appendChild(meta);
+        item.addEventListener("click", () => carregarDetalhe(r.id));
+
+        listaRestaurantes.appendChild(item);
+      });
+    }
+
+    async function carregarDetalhe(id) {
+      statusMsg.textContent = "Carregando dados...";
+      const { data, error } = await supabaseClient
+        .from("restaurantes")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        console.error(error);
+        statusMsg.textContent = "Erro ao carregar dados do restaurante.";
+        statusMsg.classList.add("status-error");
+        return;
+      }
+
+      currentId = data.id;
+
+      nomeEl.value = data.nome || "";
+      telefoneEl.value = data.telefone || "";
+      enderecoEl.value = data.endereco || "";
+      totalVisitasEl.value = data.total_visitas ?? "";
+      mapsLinkEl.value = data.maps_link || "";
+      resenhaEl.value = data.resenha || "";
+      notaEl.value = data.nota_editorial || "";
+
+      for (let i = 0; i < imgInputs.length; i++) {
+        const fieldName = `imagem${i + 1}`;
+        const url = data[fieldName] || "";
+        imgInputs[i].value = url;
+        imgPreviews[i].style.backgroundImage = url ? `url('${url}')` : "none";
+        if (fileInputs[i]) {
+          fileInputs[i].value = "";
+        }
+      }
+
+      statusMsg.textContent = "";
+      statusMsg.classList.remove("status-error");
+      renderLista(); // para marcar ativo
+    }
+
+    function limparFormulario() {
+      currentId = null;
+      nomeEl.value = "";
+      telefoneEl.value = "";
+      enderecoEl.value = "";
+      totalVisitasEl.value = "";
+      mapsLinkEl.value = "";
+      resenhaEl.value = "";
+      notaEl.value = "";
+      imgInputs.forEach(input => input.value = "");
+      imgPreviews.forEach(pre => pre.style.backgroundImage = "none");
+      fileInputs.forEach(fi => fi.value = "");
+      statusMsg.textContent = "Novo restaurante em edição.";
+      statusMsg.classList.remove("status-error");
+      renderLista();
+    }
+
+    async function salvarRestaurante() {
+      const payload = {
+        nome: nomeEl.value.trim(),
+        telefone: telefoneEl.value.trim(),
+        endereco: enderecoEl.value.trim(),
+        total_visitas: totalVisitasEl.value ? parseInt(totalVisitasEl.value, 10) : 0,
+        maps_link: mapsLinkEl.value.trim(),
+        resenha: resenhaEl.value.trim(),
+        nota_editorial: notaEl.value.trim(),
+        imagem1: imgInputs[0].value.trim() || null,
+        imagem2: imgInputs[1].value.trim() || null,
+        imagem3: imgInputs[2].value.trim() || null,
+        imagem4: imgInputs[3].value.trim() || null,
+        imagem5: imgInputs[4].value.trim() || null,
+      };
+
+      if (!payload.nome) {
+        statusMsg.textContent = "Informe pelo menos o nome do restaurante.";
+        statusMsg.classList.add("status-error");
+        return;
+      }
+
+      statusMsg.textContent = "Salvando...";
+      statusMsg.classList.remove("status-error");
+
+      let result;
+      if (currentId) {
+        result = await supabaseClient
+          .from("restaurantes")
+          .update(payload)
+          .eq("id", currentId)
+          .select("id")
+          .single();
+      } else {
+        result = await supabaseClient
+          .from("restaurantes")
+          .insert(payload)
+          .select("id")
+          .single();
+      }
+
+      const { data, error } = result;
+
+      if (error) {
+        console.error(error);
+        statusMsg.textContent = "Erro ao salvar. Tente novamente.";
+        statusMsg.classList.add("status-error");
+        return;
+      }
+
+      currentId = data.id;
+      statusMsg.textContent = "Restaurante salvo com sucesso.";
+      await carregarLista();
+      await carregarDetalhe(currentId);
+    }
+
+    async function excluirRestaurante() {
+      if (!currentId) {
+        statusMsg.textContent = "Selecione um restaurante para excluir.";
+        statusMsg.classList.add("status-error");
+        return;
+      }
+
+      const confirma = window.confirm("Tem certeza que deseja excluir este perfil?");
+      if (!confirma) return;
+
+      statusMsg.textContent = "Excluindo...";
+      statusMsg.classList.remove("status-error");
+
+      const { error } = await supabaseClient
+        .from("restaurantes")
+        .delete()
+        .eq("id", currentId);
+
+      if (error) {
+        console.error(error);
+        statusMsg.textContent = "Erro ao excluir.";
+        statusMsg.classList.add("status-error");
+        return;
+      }
+
+      statusMsg.textContent = "Perfil excluído.";
+      currentId = null;
+      await carregarLista();
+      limparFormulario();
+    }
+
+    // Eventos
+    document.getElementById("btnNovo").addEventListener("click", limparFormulario);
+    document.getElementById("btnSalvar").addEventListener("click", salvarRestaurante);
+    document.getElementById("btnExcluir").addEventListener("click", excluirRestaurante);
+    searchInput.addEventListener("input", renderLista);
+
+    // Inicialização
+    carregarLista();
+  </script>
+</body>
+</html>

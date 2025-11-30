@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guia Cerrado – Assinatura</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <style>
+    body {
+      background: #000;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .wrapper {
+      text-align: center;
+    }
+
+    .logo {
+      width: 120px;
+      margin-bottom: 10px;
+    }
+
+    .title {
+      font-size: 1.4rem;
+      margin-bottom: 20px;
+    }
+
+    .highlight {
+      color: #f97373;
+    }
+
+    .modal {
+      background: rgba(15, 23, 42, 0.65);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 25px;
+      max-width: 500px;
+      margin: 0 auto;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.75);
+      transition: all 0.4s ease;
+    }
+
+    .fade {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    .fade.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      background: #dc2626;
+      border: none;
+      border-radius: 999px;
+      padding: 12px;
+      color: #fff;
+      font-weight: 600;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .btn:hover {
+      background: #b91c1c;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 10px;
+      text-align: left;
+      margin-top: 10px;
+    }
+
+    .field label {
+      font-size: 0.8rem;
+      color: #ccc;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(15, 23, 42, 0.85);
+      color: #fff;
+    }
+
+    .terms {
+      background: rgba(15, 23, 42, 0.8);
+      border-radius: 12px;
+      padding: 10px;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      max-height: 120px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+
+    .terms::-webkit-scrollbar { width: 0; }
+
+    .accept {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <img src="../recursos/logo.png" class="logo" alt="Guia Cerrado" />
+    <div class="title">Guia Cerrado – <span class="highlight">Assine já!</span></div>
+
+    <div class="modal fade active" id="modal">
+      <h2>Escolha seu tipo de acesso</h2>
+      <div class="buttons">
+        <button class="btn" onclick="showForm('restaurante')">Para Restaurantes</button>
+        <button class="btn" onclick="showForm('membro')">Para Membros</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const supabaseUrl = 'https://kgppqiqnxwxemqyrlfum.supabase.co';
+    const supabaseKey = 'sb_publishable_lFw3tfDJap3R8HvO2Gv14w_1BGA-nYQ';
+    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    const modal = document.getElementById('modal');
+
+    const termos = `
+      <div class='terms'>
+        Ao continuar, você declara estar ciente de que seus dados serão utilizados para gerar sua assinatura, gerenciar o acesso à plataforma e melhorar sua experiência no Guia Cerrado. Podemos entrar em contato por e-mail ou telefone para comunicações importantes, sempre com respeito à sua privacidade. Seus dados não serão vendidos a terceiros e serão tratados com segurança, seguindo a legislação vigente. Você poderá solicitar a atualização ou remoção de informações, bem como o cancelamento da assinatura, conforme descrito neste termo de exemplo.
+      </div>
+      <div class='accept'>
+        <input type='checkbox' id='aceite'>
+        <label for='aceite'>Li e aceito os termos.</label>
+      </div>
+    `;
+
+    function fadeTransition(content) {
+      modal.classList.remove('active');
+      modal.classList.add('fade');
+      setTimeout(() => {
+        modal.innerHTML = content;
+        modal.classList.remove('fade');
+        modal.classList.add('active');
+      }, 300);
+    }
+
+    function showForm(type) {
+      const isRestaurante = type === 'restaurante';
+      fadeTransition(`
+        <h2>Cadastro de ${isRestaurante ? 'Restaurante' : 'Membro'}</h2>
+        <form id='cadastroForm'>
+          <div class='form-grid'>
+            ${isRestaurante ? `
+              <div class='field'><label>Razão Social</label><input type='text' name='razao_social'></div>
+              <div class='field'><label>Nome Fantasia</label><input type='text' name='nome_fantasia'></div>
+              <div class='field'><label>CNPJ</label><input type='text' name='cnpj'></div>
+              <div class='field'><label>E-mail Corporativo</label><input type='email' name='email'></div>
+              <div class='field'><label>Telefone Comercial</label><input type='tel' name='telefone'></div>
+              <div class='field'><label>Endereço Completo</label><input type='text' name='endereco'></div>
+            ` : `
+              <div class='field'><label>Nome Completo</label><input type='text' name='nome'></div>
+              <div class='field'><label>CPF</label><input type='text' name='cpf'></div>
+              <div class='field'><label>E-mail</label><input type='email' name='email'></div>
+              <div class='field'><label>Telefone</label><input type='tel' name='telefone'></div>
+              <div class='field'><label>Endereço Completo</label><input type='text' name='endereco'></div>
+            `}
+            <div class='field'><label>Senha</label><input type='password' name='senha'></div>
+            <div class='field'><label>Confirmar Senha</label><input type='password' name='confirmar_senha'></div>
+          </div>
+          ${termos}
+          <div class='buttons'>
+            <button type='button' class='btn' onclick='saveData("${type}")'>Assinar</button>
+            <button type='button' class='btn' onclick='goBack()'>Voltar</button>
+          </div>
+        </form>
+      `);
+    }
+
+    async function saveData(tipo) {
+      const form = document.getElementById('cadastroForm');
+      const formData = new FormData(form);
+
+      const aceite = document.getElementById('aceite');
+      if (!aceite || !aceite.checked) {
+        alert('Para continuar, é necessário ler e aceitar os termos.');
+        return;
+      }
+
+      const email = (formData.get('email') || '').trim();
+      const senha = (formData.get('senha') || '').trim();
+      const confirmar = (formData.get('confirmar_senha') || '').trim();
+
+      if (!email) {
+        alert('Informe um e-mail válido.');
+        return;
+      }
+
+      if (!senha || !confirmar) {
+        alert('Informe a senha e a confirmação de senha.');
+        return;
+      }
+
+      if (senha !== confirmar) {
+        alert('As senhas não coincidem.');
+        return;
+      }
+
+      if (senha.length < 6) {
+        alert('A senha deve ter pelo menos 6 caracteres.');
+        return;
+      }
+
+      // Cria usuário no Auth do Supabase
+      const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+        email,
+        password: senha
+      });
+
+      if (authError) {
+        alert('Erro ao criar conta: ' + authError.message);
+        return;
+      }
+
+      const userId = authData.user ? authData.user.id : null;
+
+      // Remove campos de senha do que será salvo na tabela de assinaturas
+      formData.delete('senha');
+      formData.delete('confirmar_senha');
+
+      const payload = Object.fromEntries(formData.entries());
+      payload.tipo = tipo;
+      payload.user_id = userId;
+
+      const { data, error } = await supabaseClient.from('assinaturas').insert([payload]);
+
+      if (error) {
+        alert('Erro ao salvar assinatura: ' + error.message);
+      } else {
+        alert('Assinatura criada com sucesso! Verifique seu e-mail para confirmar o acesso.');
+        window.location.href = 'assinatura.html';
+      }
+    }
+
+    function goBack() {
+      fadeTransition(`
+        <h2>Escolha seu tipo de acesso</h2>
+        <div class='buttons'>
+          <button class='btn' onclick="showForm('restaurante')">Para Restaurantes</button>
+          <button class='btn' onclick="showForm('membro')">Para Membros</button>
+        </div>
+      `);
+    }
+  </script>
+</body>
+</html>

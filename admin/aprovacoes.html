@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guia Cerrado – Assinaturas</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: #000;
+      color: #fff;
+      min-height: 100vh;
+      padding: 30px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .toolbar {
+      max-width: 780px;
+      margin: 0 auto 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.9);
+      color: #e5e7eb;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .search-input::placeholder {
+      color: #6b7280;
+    }
+
+    .select-order {
+      min-width: 200px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.95);
+      color: #e5e7eb;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    #usuariosContainer {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    .user-card {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 15px 20px 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .info span {
+      font-size: 0.9rem;
+      color: #e5e7eb;
+    }
+
+    .tag-tipo {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.6);
+      color: #bfdbfe;
+    }
+
+    .meta {
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: #9ca3af;
+    }
+
+    /* CHAVE VERTICAL APROVADO / DESAPROVADO */
+    .approval-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .approval-switch {
+      width: 40px;
+      padding: 4px;
+      border-radius: 999px;
+      background: #020617;
+      border: 2px solid #111827;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 4px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.8);
+    }
+
+    .approval-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      user-select: none;
+      transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        opacity 0.2s ease,
+        filter 0.2s ease;
+    }
+
+    .approval-on {
+      background: radial-gradient(circle at 30% 20%, #4ade80, #16a34a);
+      color: #052e16;
+      box-shadow: 0 4px 10px rgba(22, 163, 74, 0.9);
+    }
+
+    .approval-off {
+      background: radial-gradient(circle at 30% 20%, #fca5a5, #ef4444);
+      color: #450a0a;
+      box-shadow: 0 4px 10px rgba(239, 68, 68, 0.9);
+    }
+
+    /* o que NÃO está ativo fica opaco */
+    .approval-btn.dimmed {
+      opacity: 0.35;
+      filter: grayscale(0.4);
+      box-shadow: none;
+      transform: translateY(0);
+    }
+
+    /* botão ativo "anda" levemente para fora, simulando deslocamento */
+    .approval-btn.active-top {
+      transform: translateY(-3px);
+    }
+
+    .approval-btn.active-bottom {
+      transform: translateY(3px);
+    }
+
+    .status-label {
+      font-size: 0.73rem;
+      color: #e5e7eb;
+      text-align: center;
+      max-width: 130px;
+    }
+
+    .status-label span {
+      font-weight: 600;
+    }
+
+    .empty-state {
+      max-width: 780px;
+      margin: 40px auto 0;
+      text-align: center;
+      color: #9ca3af;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 20px 16px;
+      }
+      .card-top {
+        flex-direction: row;
+        align-items: flex-start;
+      }
+      .approval-wrapper {
+        align-items: flex-start;
+      }
+      .status-label {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Aprovação de Usuários</h1>
+
+  <div class="toolbar">
+    <input
+      type="text"
+      id="searchInput"
+      class="search-input"
+      placeholder="Buscar por nome, CPF ou e-mail"
+    />
+    <select id="orderSelect" class="select-order">
+      <option value="recentes">Mais recentes primeiro</option>
+      <option value="nome_asc">Nome (A → Z)</option>
+      <option value="nome_desc">Nome (Z → A)</option>
+    </select>
+  </div>
+
+  <div id="usuariosContainer"></div>
+
+  <script>
+    const supabaseUrl = 'https://kgppqiqnxwxemqyrlfum.supabase.co';
+    const supabaseKey = 'sb_publishable_lFw3tfDJap3R8HvO2Gv14w_1BGA-nYQ';
+    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    const searchInput = document.getElementById('searchInput');
+    const orderSelect = document.getElementById('orderSelect');
+    const container = document.getElementById('usuariosContainer');
+
+    let searchTimeout = null;
+
+    async function carregarUsuarios(searchTerm = '', orderBy = 'recentes') {
+      container.innerHTML = '<p class="empty-state">Carregando usuários...</p>';
+
+      let query = supabaseClient
+        .from('assinaturas')
+        .select('id, nome, cpf, email, tipo, created_at, aprovado');
+
+      if (searchTerm) {
+        const term = searchTerm.trim();
+        query = query.or(
+          'nome.ilike.%' + term + '%,' +
+          'email.ilike.%' + term + '%,' +
+          'cpf.ilike.%' + term + '%'
+        );
+      }
+
+      switch (orderBy) {
+        case 'nome_asc':
+          query = query.order('nome', { ascending: true });
+          break;
+        case 'nome_desc':
+          query = query.order('nome', { ascending: false });
+          break;
+        case 'recentes':
+        default:
+          query = query.order('created_at', { ascending: false });
+          break;
+      }
+
+      const { data, error } = await query;
+
+      container.innerHTML = '';
+
+      if (error) {
+        console.error(error);
+        container.innerHTML = `<p class="empty-state">Erro ao carregar: ${error.message}</p>`;
+        return;
+      }
+
+      if (!data || !data.length) {
+        container.innerHTML = '<p class="empty-state">Nenhum usuário encontrado.</p>';
+        return;
+      }
+
+      data.forEach(user => {
+        const card = document.createElement('div');
+        card.className = 'user-card';
+
+        const cardTop = document.createElement('div');
+        cardTop.className = 'card-top';
+
+        const info = document.createElement('div');
+        info.className = 'info';
+
+        const tipoLabel = user.tipo ? user.tipo : '—';
+
+        info.innerHTML = `
+          <span><strong>Nome:</strong> ${user.nome || '—'}</span>
+          <span><strong>CPF:</strong> ${user.cpf || '—'}</span>
+          <span><strong>Email:</strong> ${user.email || '—'}</span>
+          <span class="tag-tipo">${tipoLabel}</span>
+        `;
+
+        const aprovado = !!user.aprovado;
+
+        const approvalWrapper = document.createElement('div');
+        approvalWrapper.className = 'approval-wrapper';
+
+        const switchEl = document.createElement('div');
+        switchEl.className = 'approval-switch';
+
+        const btnOn = document.createElement('div');
+        const btnOff = document.createElement('div');
+        const statusLabel = document.createElement('div');
+
+        btnOn.className = 'approval-btn approval-on';
+        btnOn.innerHTML = '−'; // verde
+
+        btnOff.className = 'approval-btn approval-off';
+        btnOff.innerHTML = 'o'; // vermelho
+
+        statusLabel.className = 'status-label';
+
+        // função que aplica visualmente o estado
+        function aplicarEstadoLocal(isAprovado) {
+          if (isAprovado) {
+            btnOn.classList.remove('dimmed');
+            btnOff.classList.add('dimmed');
+
+            btnOn.classList.add('active-top');
+            btnOff.classList.remove('active-bottom');
+
+            statusLabel.innerHTML = '<span>Aprovado</span><br>Tem acesso à plataforma';
+          } else {
+            btnOn.classList.add('dimmed');
+            btnOff.classList.remove('dimmed');
+
+            btnOn.classList.remove('active-top');
+            btnOff.classList.add('active-bottom');
+
+            statusLabel.innerHTML = '<span>Desaprovado</span><br>Acesso bloqueado';
+          }
+        }
+
+        // estado inicial vindo do banco
+        aplicarEstadoLocal(aprovado);
+
+        // click handlers com atualização no Supabase
+        btnOn.onclick = () => alterarStatus(user.id, true, aplicarEstadoLocal);
+        btnOff.onclick = () => alterarStatus(user.id, false, aplicarEstadoLocal);
+
+        switchEl.appendChild(btnOn);
+        switchEl.appendChild(btnOff);
+
+        approvalWrapper.appendChild(switchEl);
+        approvalWrapper.appendChild(statusLabel);
+
+        cardTop.appendChild(info);
+        cardTop.appendChild(approvalWrapper);
+
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+
+        const created = user.created_at ? new Date(user.created_at) : null;
+        const dataFormatada = created
+          ? created.toLocaleDateString('pt-BR') + ' ' +
+            created.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          : '—';
+
+        meta.textContent = `Criado em: ${dataFormatada}`;
+
+        card.appendChild(cardTop);
+        card.appendChild(meta);
+        container.appendChild(card);
+      });
+    }
+
+    // atualiza o banco E mexe na chave daquele card
+    async function alterarStatus(id, status, aplicarEstadoLocal) {
+      const { error } = await supabaseClient
+        .from('assinaturas')
+        .update({ aprovado: status })
+        .eq('id', id);
+
+      if (error) {
+        alert('Erro ao atualizar status: ' + error.message);
+        return;
+      }
+
+      // atualiza só o card, sem recarregar tudo
+      aplicarEstadoLocal(status);
+    }
+
+    // busca com debounce
+    searchInput.addEventListener('input', () => {
+      if (searchTimeout) clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        carregarUsuarios(searchInput.value, orderSelect.value);
+      }, 300);
+    });
+
+    // mudança de ordenação
+    orderSelect.addEventListener('change', () => {
+      carregarUsuarios(searchInput.value, orderSelect.value);
+    });
+
+    // carga inicial
+    carregarUsuarios();
+  </script>
+</body>
+</html>
