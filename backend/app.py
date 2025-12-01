@@ -33,25 +33,19 @@ if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-app = Flask(__name__)
+# -------------------------------------------------------------------
+# Flask: serve frontend estático + API
+# -------------------------------------------------------------------
+# app.py está em backend/, o index.html está na raiz do projeto.
+# Por isso usamos static_folder="../" para apontar pra raiz.
+app = Flask(
+    __name__,
+    static_folder="../",   # raiz do projeto
+    static_url_path=""     # arquivos estáticos a partir de "/"
+)
+
 CORS(app, resources={r"/api/*": {"origins": FRONTEND_ORIGIN},
                      r"/webhook/*": {"origins": "*"}})
-
-# -------------------------------------------------------------------
-# Rota raiz (para não dar Not Found no domínio principal)
-# -------------------------------------------------------------------
-
-@app.route("/", methods=["GET"])
-def index():
-    return jsonify({
-        "status": "ok",
-        "message": "Backend Guia Cerrado online ✅",
-        "routes": [
-            "/api/health",
-            "/api/criar-checkout",
-            "/webhook/pagarme"
-        ]
-    }), 200
 
 # -------------------------------------------------------------------
 # Utilitários
@@ -113,7 +107,7 @@ def criar_link_pagamento(tipo: str, email: str, nome: str, metadata_extra: dict 
 
     response = requests.post(
         url,
-        auth=(PAGARME_SECRET_KEY, ""),
+        auth=(PAGARME_SECRET_KEY, ""),  # Basic Auth com secret key como username
         json=payload,
         timeout=30,
     )
@@ -135,6 +129,9 @@ def salvar_pagamento_supabase(
     pagarme_link: dict,
     origem: str | None = None,
 ):
+    """
+    Salva o registro do pagamento no Supabase, na tabela 'pagamentos'.
+    """
     payment_link_id = pagarme_link.get("id")
     checkout_url = pagarme_link.get("url")
     status = pagarme_link.get("status", "active")
@@ -156,9 +153,18 @@ def salvar_pagamento_supabase(
     res = supabase.table("pagamentos").insert(row).execute()
     return res
 
+
 # -------------------------------------------------------------------
-# Rotas API
+# Rotas
 # -------------------------------------------------------------------
+
+# Raiz: devolve o index.html da raiz do projeto
+@app.route("/", methods=["GET"])
+def serve_index():
+    # como configuramos static_folder="../", o send_static_file
+    # procura a partir da raiz do projeto
+    return app.send_static_file("index.html")
+
 
 @app.route("/api/health", methods=["GET"])
 def health():
@@ -169,6 +175,7 @@ def health():
             "pagarme_base_url": PAGARME_BASE_URL,
         }
     )
+
 
 @app.route("/api/criar-checkout", methods=["POST"])
 def api_criar_checkout():
@@ -224,6 +231,7 @@ def api_criar_checkout():
         }
     )
 
+
 @app.route("/webhook/pagarme", methods=["POST"])
 def webhook_pagarme():
     raw_body = request.get_data(as_text=True)
@@ -270,6 +278,7 @@ def webhook_pagarme():
         print("Erro ao atualizar pagamento pelo webhook:", e)
 
     return jsonify({"received": True}), 200
+
 
 # -------------------------------------------------------------------
 # Execução local
