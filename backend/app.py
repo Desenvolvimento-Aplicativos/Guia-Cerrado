@@ -37,6 +37,21 @@ app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": FRONTEND_ORIGIN},
                      r"/webhook/*": {"origins": "*"}})
 
+# -------------------------------------------------------------------
+# Rota raiz (para não dar Not Found no domínio principal)
+# -------------------------------------------------------------------
+
+@app.route("/", methods=["GET"])
+def index():
+    return jsonify({
+        "status": "ok",
+        "message": "Backend Guia Cerrado online ✅",
+        "routes": [
+            "/api/health",
+            "/api/criar-checkout",
+            "/webhook/pagarme"
+        ]
+    }), 200
 
 # -------------------------------------------------------------------
 # Utilitários
@@ -60,9 +75,8 @@ def criar_link_pagamento(tipo: str, email: str, nome: str, metadata_extra: dict 
     else:
         raise ValueError("tipo deve ser 'restaurante' ou 'membro'.")
 
-    # Body conforme docs de Link de Pagamento / Checkout Pagar.me :contentReference[oaicite:2]{index=2}
     payload = {
-        "type": "order",  # para recorrência real você pode depois migrar para 'subscription' + plano
+        "type": "order",
         "name": f"{item_name} ({email})",
         "is_building": False,
         "payment_settings": {
@@ -72,7 +86,6 @@ def criar_link_pagamento(tipo: str, email: str, nome: str, metadata_extra: dict 
                 "installments_setup": {
                     "interest_type": "simple"
                 },
-                # aqui dá pra configurar parcelamento se quiser
             }
         },
         "cart_settings": {
@@ -84,7 +97,6 @@ def criar_link_pagamento(tipo: str, email: str, nome: str, metadata_extra: dict 
                 }
             ]
         },
-        # customer_settings é opcional, mas ajuda nos relatórios
         "customer_settings": {
             "customer": {
                 "name": nome or email,
@@ -101,7 +113,7 @@ def criar_link_pagamento(tipo: str, email: str, nome: str, metadata_extra: dict 
 
     response = requests.post(
         url,
-        auth=(PAGARME_SECRET_KEY, ""),  # Basic Auth com secret key como username :contentReference[oaicite:3]{index=3}
+        auth=(PAGARME_SECRET_KEY, ""),
         json=payload,
         timeout=30,
     )
@@ -123,20 +135,6 @@ def salvar_pagamento_supabase(
     pagarme_link: dict,
     origem: str | None = None,
 ):
-    """
-    Salva o registro do pagamento no Supabase, na tabela 'pagamentos'.
-    Campos sugeridos para a tabela:
-      id (serial / uuid)        - PK
-      user_id (text)
-      email (text)
-      tipo (text)
-      payment_link_id (text)
-      checkout_url (text)
-      pagarme_status (text)
-      pagarme_raw (jsonb)
-      origem (text)
-      created_at (timestamp)
-    """
     payment_link_id = pagarme_link.get("id")
     checkout_url = pagarme_link.get("url")
     status = pagarme_link.get("status", "active")
@@ -158,9 +156,8 @@ def salvar_pagamento_supabase(
     res = supabase.table("pagamentos").insert(row).execute()
     return res
 
-
 # -------------------------------------------------------------------
-# Rotas
+# Rotas API
 # -------------------------------------------------------------------
 
 @app.route("/api/health", methods=["GET"])
@@ -173,29 +170,8 @@ def health():
         }
     )
 
-
 @app.route("/api/criar-checkout", methods=["POST"])
 def api_criar_checkout():
-    """
-    Rota chamada pelo front (assinatura.html) para criar o Checkout.
-
-    Espera um JSON assim:
-    {
-      "tipo": "restaurante" | "membro",
-      "email": "cliente@exemplo.com",
-      "nome": "Nome do Cliente",
-      "user_id": "... opcional, supabase auth ...",
-      "extra": { ... opcional ... }
-    }
-
-    Resposta:
-    {
-      "ok": true,
-      "checkout_url": "https://payment-link.pagar.me/pl_...",
-      "payment_link_id": "pl_...",
-      "pagarme": { ...resposta bruta... }
-    }
-    """
     try:
         data = request.get_json(force=True) or {}
     except Exception:
@@ -228,7 +204,6 @@ def api_criar_checkout():
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 502
 
-    # Salva no Supabase (ignora erro silenciosamente para não quebrar o checkout)
     try:
         salvar_pagamento_supabase(
             user_id=user_id,
@@ -238,7 +213,6 @@ def api_criar_checkout():
             origem=data.get("origem"),
         )
     except Exception as e:
-        # log básico; em produção, use algo melhor
         print("Erro ao salvar no Supabase:", e)
 
     return jsonify(
@@ -250,18 +224,8 @@ def api_criar_checkout():
         }
     )
 
-
 @app.route("/webhook/pagarme", methods=["POST"])
 def webhook_pagarme():
-    """
-    Endpoint para receber webhooks da Pagar.me.
-    Você deve configurar essa URL na dashboard da Pagar.me, associando
-    aos eventos relevantes (ex.: order.paid, charge.paid). :contentReference[oaicite:4]{index=4}
-
-    Aqui fazemos:
-      1. Guardar o webhook bruto na tabela 'webhooks_pagarme' (debug).
-      2. Se for um evento de pagamento aprovado, marcar 'pagamentos' como pago.
-    """
     raw_body = request.get_data(as_text=True)
     try:
         payload = json.loads(raw_body or "{}")
@@ -271,7 +235,6 @@ def webhook_pagarme():
     event_type = payload.get("type")
     data_obj = payload.get("data", {})
 
-    # 1) Salvar webhook bruto
     try:
         supabase.table("webhooks_pagarme").insert(
             {
@@ -283,11 +246,8 @@ def webhook_pagarme():
     except Exception as e:
         print("Erro ao salvar webhook no Supabase:", e)
 
-    # 2) Tentar marcar pagamento como pago, se for evento relevante.
-    # Exemplo de payload de order.paid nas docs :contentReference[oaicite:5]{index=5}
     try:
         if event_type in ("order.paid", "charge.paid", "checkout.closed"):
-            # Tenta identificar via metadata ou ids
             order_id = data_obj.get("id")
             metadata = data_obj.get("metadata") or {}
             payment_link_id = metadata.get("payment_link_id")
@@ -302,9 +262,6 @@ def webhook_pagarme():
                     "payment_link_id", payment_link_id
                 ).execute()
             elif order_id:
-                # Se você guardar order_id em 'pagarme_raw', pode filtrar via contains
-                # ou criar uma coluna separada em 'pagamentos' com esse id.
-                # Aqui assumimos que existe uma coluna order_id.
                 update_data["order_id"] = order_id
                 supabase.table("pagamentos").update(update_data).eq(
                     "order_id", order_id
@@ -312,15 +269,12 @@ def webhook_pagarme():
     except Exception as e:
         print("Erro ao atualizar pagamento pelo webhook:", e)
 
-    # Webhook precisa responder 2xx para ser considerado OK
     return jsonify({"received": True}), 200
-
 
 # -------------------------------------------------------------------
 # Execução local
 # -------------------------------------------------------------------
 
 if __name__ == "__main__":
-    # Em produção, use gunicorn/uwsgi, etc.
     port = int(os.getenv("PORT", "5000"))
     app.run(host="0.0.0.0", port=port, debug=True)
