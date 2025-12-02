@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guia Cerrado – Financeiro (Contas Recebidas)</title>
+
+  <!-- Supabase UMD v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #020617;
+      --bg-card: rgba(15, 23, 42, 0.95);
+      --border-soft: rgba(148, 163, 184, 0.4);
+      --gold: #fbbf24;
+      --muted: #9ca3af;
+      --accent-green: #22c55e;
+      --accent-red: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+      background: radial-gradient(circle at top, #111827 0, #020617 45%, #000 100%);
+      color: #e5e7eb;
+    }
+
+    .page-shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    header {
+      margin-bottom: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .title-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .sub {
+      font-size: 0.9rem;
+      color: var(--muted);
+      max-width: 520px;
+    }
+
+    .pill {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(248, 250, 252, 0.12);
+      background: radial-gradient(circle at top left, rgba(248, 250, 252, 0.06), transparent);
+    }
+
+    .dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      margin-right: 4px;
+      background: var(--gold);
+    }
+
+    /* cards principais */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .metrics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .metrics-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .metric-card {
+      position: relative;
+      padding: 16px 16px 14px;
+      border-radius: 18px;
+      border: 1px solid var(--border-soft);
+      background: radial-gradient(circle at top left, rgba(250, 250, 250, 0.05), rgba(15, 23, 42, 0.98));
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+    }
+
+    .metric-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(251, 191, 36, 0.12), transparent 55%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .metric-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .metric-value {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #f9fafb;
+    }
+
+    .metric-footnote {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .metric-highlight {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.75);
+    }
+
+    .ok {
+      color: var(--accent-green);
+      border-color: rgba(34, 197, 94, 0.7);
+    }
+
+    .warn {
+      color: var(--accent-red);
+      border-color: rgba(248, 113, 113, 0.7);
+    }
+
+    /* bloco resumo + última movimentação */
+    .panel {
+      border-radius: 18px;
+      border: 1px solid var(--border-soft);
+      background: var(--bg-card);
+      padding: 16px 16px 18px;
+      box-shadow: 0 20px 55px rgba(0, 0, 0, 0.7);
+      margin-bottom: 20px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .panel-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+    }
+
+    .state {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .state-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      border: 2px solid rgba(148, 163, 184, 0.6);
+      border-top-color: #facc15;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .state-error {
+      color: #fecaca;
+    }
+
+    .list {
+      font-size: 0.85rem;
+      color: #e5e7eb;
+      line-height: 1.6;
+      padding-left: 18px;
+    }
+
+    .list li + li {
+      margin-top: 4px;
+    }
+
+    .list strong {
+      color: #f9fafb;
+    }
+
+    /* tabela simples de últimas contas */
+    .table-wrapper {
+      margin-top: 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.96), #020617);
+      max-height: 260px;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      background: rgba(15, 23, 42, 0.98);
+      z-index: 2;
+    }
+
+    th, td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(30, 64, 175, 0.35);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.8);
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .paid {
+      background: rgba(22, 163, 74, 0.14);
+      color: #bbf7d0;
+      border: 1px solid rgba(34, 197, 94, 0.8);
+    }
+
+    .other {
+      background: rgba(148, 163, 184, 0.14);
+      color: #e5e7eb;
+      border: 1px solid rgba(148, 163, 184, 0.8);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .small {
+      font-size: 0.75rem;
+    }
+
+    .footer-note {
+      margin-top: 10px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header>
+      <div class="title-row">
+        <div>
+          <h1>Contas recebidas</h1>
+          <p class="sub">
+            Painel resumido das assinaturas já pagas: quantas pessoas estão ativas e
+            qual é o faturamento total recebido até agora.
+          </p>
+        </div>
+        <div class="pill">
+          <span class="dot"></span>
+          Pagar.me • Supabase • Guia Cerrado
+        </div>
+      </div>
+    </header>
+
+    <!-- MÉTRICAS PRINCIPAIS: só o que importa agora -->
+    <section class="metrics-grid">
+      <article class="metric-card">
+        <div class="metric-label">Faturamento total recebido</div>
+        <div class="metric-value" id="metric-total">–</div>
+        <div class="metric-footnote">
+          <span>Somatório de todas as transações pagas.</span>
+          <span class="metric-highlight ok" id="hint-total">AGREGADO</span>
+        </div>
+      </article>
+
+      <article class="metric-card">
+        <div class="metric-label">Pessoas que já pagaram</div>
+        <div class="metric-value" id="metric-pessoas">–</div>
+        <div class="metric-footnote">
+          <span>Contagem de clientes únicos com pagamento aprovado.</span>
+          <span class="metric-highlight" id="hint-pessoas">PESSOAS</span>
+        </div>
+      </article>
+
+      <article class="metric-card">
+        <div class="metric-label">Total de pagamentos</div>
+        <div class="metric-value" id="metric-transacoes">–</div>
+        <div class="metric-footnote">
+          <span>Número de contas recebidas (linhas pagas).</span>
+          <span class="metric-highlight" id="hint-transacoes">PAGAMENTOS</span>
+        </div>
+      </article>
+    </section>
+
+    <!-- RESUMO E ÚLTIMAS CONTAS -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Resumo financeiro atual</div>
+        <div class="state" id="state-indicator">
+          <div class="state-dot"></div>
+          Carregando dados de contas recebidas…
+        </div>
+      </div>
+
+      <ul class="list">
+        <li>
+          <strong>Faturamento total:</strong>
+          <span id="resumo-total" class="muted">–</span>
+        </li>
+        <li>
+          <strong>Pessoas únicas que já pagaram:</strong>
+          <span id="resumo-pessoas" class="muted">–</span>
+        </li>
+        <li>
+          <strong>Quantidade de pagamentos registrados:</strong>
+          <span id="resumo-transacoes" class="muted">–</span>
+        </li>
+      </ul>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Cliente</th>
+              <th>Valor</th>
+              <th>Status</th>
+              <th>ID</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-contas">
+            <!-- linhas inseridas pelo JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footer-note">
+        <span id="foot-info" class="small"></span>
+        <span class="small muted">
+          Fonte: tabela de transações da Pagar.me no Supabase
+          (apenas status <strong>pago</strong>/<strong>paid</strong>/<strong>authorized</strong> contam como recebidos).
+        </span>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // ==============================
+    // CONFIGURAÇÃO SUPABASE
+    // ==============================
+    const SUPABASE_URL = 'https://kgppqiqnxwxemqyrlfum.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_lFw3tfDJap3R8HvO2Gv14w_1BGA-nYQ';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // === IMPORTANTE: AJUSTE AQUI O NOME DA TABELA DA PAGAR.ME ===
+    // Exemplo sugerido: "transacoes_pagarme"
+    const PAGARME_TABLE = 'transacoes_pagarme'; // troque para o nome real da sua tabela
+
+    // Se os nomes das colunas forem diferentes, ajuste dentro desta função:
+    function mapRow(raw) {
+      const dateRaw = raw.paid_at || raw.created_at || raw.data || raw.date;
+      const date = dateRaw ? new Date(dateRaw) : null;
+
+      return {
+        id: raw.id || raw.transaction_id || raw.pagarme_id || '-',
+        status: (raw.status || '').toLowerCase(),
+        amountCents: raw.amount || raw.valor || raw.amount_cents || 0, // normalmente em centavos
+        customerId: raw.customer_id || raw.cliente_id || raw.cpf || raw.email || raw.customer || null,
+        customerName: raw.customer_name || raw.nome_cliente || raw.customer || 'Cliente',
+        date
+      };
+    }
+
+    function formatBRL(value) {
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(value);
+    }
+
+    function formatDateTime(date) {
+      if (!date) return '-';
+      return date.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    async function carregarFinanceiro() {
+      const state = document.getElementById('state-indicator');
+
+      try {
+        state.innerHTML = '<div class="state-dot"></div>Carregando dados de contas recebidas…';
+
+        const { data, error } = await supabase
+          .from(PAGARME_TABLE)
+          .select('*');
+
+        if (error) {
+          console.error(error);
+          state.classList.add('state-error');
+          state.textContent = 'Erro ao carregar dados do Supabase: ' + (error.message || '');
+          return;
+        }
+
+        if (!data || !data.length) {
+          state.textContent = 'Nenhuma transação encontrada.';
+          preencherMetricas([], []);
+          preencherTabela([]);
+          return;
+        }
+
+        const mapped = data.map(mapRow);
+
+        // status considerados como "conta recebida"
+        const recebidas = mapped.filter(r =>
+          r.status === 'paid' ||
+          r.status === 'pago' ||
+          r.status === 'authorized'
+        );
+
+        preencherMetricas(mapped, recebidas);
+        preencherTabela(recebidas);
+
+        state.textContent = 'Dados carregados com sucesso.';
+      } catch (e) {
+        console.error(e);
+        state.classList.add('state-error');
+        state.textContent = 'Erro inesperado ao montar o painel financeiro.';
+      }
+    }
+
+    function preencherMetricas(todas, recebidas) {
+      const totalRecebido = recebidas.reduce(
+        (sum, r) => sum + (r.amountCents || 0),
+        0
+      ) / 100;
+
+      const setPessoas = new Set(
+        recebidas.map(r => r.customerId || r.customerName || r.id)
+      );
+      const pessoasUnicas = setPessoas.size;
+      const totalPagamentos = recebidas.length;
+
+      document.getElementById('metric-total').textContent = formatBRL(totalRecebido);
+      document.getElementById('metric-pessoas').textContent = pessoasUnicas.toString();
+      document.getElementById('metric-transacoes').textContent = totalPagamentos.toString();
+
+      document.getElementById('resumo-total').textContent = formatBRL(totalRecebido);
+      document.getElementById('resumo-pessoas').textContent = pessoasUnicas.toString();
+      document.getElementById('resumo-transacoes').textContent = totalPagamentos.toString();
+
+      const hintTotal = document.getElementById('hint-total');
+      const hintPessoas = document.getElementById('hint-pessoas');
+      const hintTrans = document.getElementById('hint-transacoes');
+
+      hintTotal.textContent = totalRecebido > 0 ? 'RECEBIDO' : 'SEM ENTRADAS';
+      hintTotal.classList.toggle('ok', totalRecebido > 0);
+      hintTotal.classList.toggle('warn', totalRecebido === 0);
+
+      hintPessoas.textContent = pessoasUnicas > 0 ? 'CLIENTES' : '0 CLIENTES';
+      hintTrans.textContent = totalPagamentos > 0 ? 'REGISTROS' : '0 REGISTROS';
+
+      const footInfo = document.getElementById('foot-info');
+      footInfo.textContent = recebidas.length
+        ? `Painel baseado em ${recebidas.length} contas recebidas de um total de ${todas.length} transações.`
+        : 'Nenhuma conta recebida até o momento.';
+    }
+
+    function preencherTabela(recebidas) {
+      const tbody = document.getElementById('tbody-contas');
+      tbody.innerHTML = '';
+
+      const ordenadas = [...recebidas].sort((a, b) => {
+        if (!a.date || !b.date) return 0;
+        return b.date - a.date;
+      });
+
+      const ultimas = ordenadas.slice(0, 25);
+
+      ultimas.forEach(r => {
+        const tr = document.createElement('tr');
+
+        const tdData = document.createElement('td');
+        tdData.textContent = formatDateTime(r.date);
+
+        const tdCliente = document.createElement('td');
+        tdCliente.textContent = r.customerName;
+
+        const tdValor = document.createElement('td');
+        tdValor.textContent = formatBRL((r.amountCents || 0) / 100);
+
+        const tdStatus = document.createElement('td');
+        const spanStatus = document.createElement('span');
+        spanStatus.className = 'badge-status paid';
+        spanStatus.textContent = (r.status || 'pago').toUpperCase();
+        tdStatus.appendChild(spanStatus);
+
+        const tdId = document.createElement('td');
+        tdId.textContent = r.id;
+
+        tr.appendChild(tdData);
+        tr.appendChild(tdCliente);
+        tr.appendChild(tdValor);
+        tr.appendChild(tdStatus);
+        tr.appendChild(tdId);
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', carregarFinanceiro);
+  </script>
+</body>
+</html>

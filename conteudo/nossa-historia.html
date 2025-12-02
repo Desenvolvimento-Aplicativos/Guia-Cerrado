@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nossa História – Guia Cerrado</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: radial-gradient(circle at top, #111827 0, #020617 45%, #000 100%);
+      color: #f9fafb;
+      font-family: 'Inter', system-ui, sans-serif;
+      line-height: 1.75;
+    }
+
+    .page-container {
+      max-width: 780px;
+    }
+
+    .story {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 1.25rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(18px);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .story:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.8);
+    }
+
+    .story p {
+      text-indent: 1rem;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Cabeçalho -->
+  <header class="border-b border-slate-800/70 bg-black/70 backdrop-blur-md">
+    <div class="page-container mx-auto px-4 py-4 flex items-center justify-between">
+      <a href="../index.html" class="flex items-center gap-3">
+        <img src="../recursos/logo.png" alt="Logo Guia Cerrado" class="h-9">
+        <span class="text-sm text-slate-300 tracking-wide">Guia Cerrado</span>
+      </a>
+      <a href="../index.html" class="text-[0.8rem] text-slate-400 hover:text-white transition-colors">
+        ← Voltar ao início
+      </a>
+    </div>
+  </header>
+
+  <!-- Conteúdo principal -->
+  <main class="flex-1">
+    <div class="page-container mx-auto px-4 py-10 md:py-14">
+      <article class="story p-6 md:p-10 space-y-6 text-slate-300">
+
+        <h1 class="text-2xl md:text-3xl font-semibold text-slate-50 mb-6 text-center">
+          Nossa história
+        </h1>
+
+        <p>
+          Tudo começou com uma mesa. Uma conversa longa, algumas risadas e o pensamento
+          simples de que Goiânia tinha muito mais sabor do que se via nos guias
+          tradicionais. Entre pratos, memórias e descobertas, nasceu a vontade de criar
+          um espaço que não apenas indicasse lugares, mas contasse histórias — das casas,
+          das pessoas e dos sabores do Cerrado.
+        </p>
+
+        <p>
+          O Guia Cerrado surgiu como um olhar demorado sobre a cidade.
+          Enquanto muitos correm atrás do novo, nós paramos para observar
+          o que já existia — os pequenos restaurantes de bairro, os chefs
+          que misturam tradição e ousadia, as famílias que fazem da cozinha
+          um legado silencioso.
+        </p>
+
+        <p>
+          Aqui, cada recomendação nasce de uma experiência real.
+          Não há pressa, não há algoritmos decidindo o que deve ser visto.
+          Há uma curadoria feita por quem vive a cidade, prova seus temperos
+          e acredita que gastronomia é, antes de tudo, um gesto de afeto.
+        </p>
+
+        <p>
+          Nosso papel é simples: registrar o que é verdadeiro.
+          Guardar o que vale ser lembrado. Compartilhar o que faz parte
+          da identidade goiana, que vai muito além do prato —
+          está nas pessoas, nos sotaques, nos cheiros de feira e nas mesas
+          que unem amigos e desconhecidos.
+        </p>
+
+        <p>
+          Com o tempo, o Guia Cerrado virou um mapa afetivo.
+          Um retrato vivo da cidade que come, sente e celebra.
+          Não somos um guia para turistas — somos o retrato de quem pertence.
+        </p>
+
+        <p>
+          Seguimos caminhando, descobrindo, provando e escrevendo.
+          Cada casa visitada é um novo capítulo, cada história compartilhada
+          é mais um motivo para continuar.
+        </p>
+
+        <p class="text-slate-400 italic pt-4 border-t border-slate-800/50">
+          Porque, no fim das contas, o Cerrado também se conta à mesa.
+        </p>
+
+      </article>
+
+      <div class="text-center mt-10">
+        <a href="../index.html" class="text-[0.85rem] text-slate-400 hover:text-white transition-colors">
+          ← Voltar para a página principal
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Rodapé -->
+  <footer class="border-t border-slate-800/70 bg-black/70 mt-8">
+    <div class="page-container mx-auto px-4 py-4 text-center text-[0.75rem] text-slate-500">
+      © <span id="year"></span> Guia Cerrado — Um registro afetuoso da gastronomia goiana.
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
