@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guia Cerrado – Minha Sacola</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #000;
+      color: #f9fafb;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    header {
+      text-align: center;
+      padding: 24px 16px 12px;
+    }
+
+    header img {
+      width: 120px;
+      margin-bottom: 8px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      background: #020617;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: #0b1120;
+      text-align: left;
+    }
+
+    tr:nth-child(even) td {
+      background: #020617;
+    }
+    tr:nth-child(odd) td {
+      background: #030712;
+    }
+
+    .total-box {
+      margin-top: 16px;
+      text-align: right;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .empty {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 0.95rem;
+      color: #9ca3af;
+    }
+
+    .btn-row {
+      margin-top: 24px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: none;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-comprar {
+      background: #22c55e;
+      color: #fff;
+    }
+
+    .btn-comprar:hover {
+      background: #16a34a;
+    }
+
+    .btn-excluir {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .btn-excluir:hover {
+      background: #dc2626;
+    }
+
+    .btn-historico {
+      background: #3b82f6;
+      color: #fff;
+    }
+
+    .btn-historico:hover {
+      background: #2563eb;
+    }
+
+    .back-btn {
+      background: #f87171;
+      color: #fff;
+    }
+
+    .back-btn:hover {
+      background: #ef4444;
+    }
+
+    .historico-box {
+      margin-top: 32px;
+      background: #0b1120;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .historico-item {
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 0;
+    }
+
+    .historico-item:last-child {
+      border-bottom: none;
+    }
+
+    .historico-item strong {
+      color: #f87171;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="../recursos/logo.png" alt="Guia Cerrado" />
+    <h1>Minha Sacola</h1>
+  </header>
+
+  <div class="container">
+    <div id="infoPedido"></div>
+    <div id="listaPedidos"></div>
+    <div id="totalPedidos" class="total-box"></div>
+
+    <div class="btn-row">
+      <button class="btn-comprar" id="btnComprar">Comprar Pedido</button>
+      <button class="btn-excluir" id="btnExcluir">Excluir Pedido</button>
+      <button class="btn-historico" id="btnHistorico">Histórico</button>
+      <button class="back-btn" onclick="window.location.href='meu-cardapio.html'">
+        Voltar ao cardápio
+      </button>
+    </div>
+
+    <div id="historicoPedidos" class="historico-box" style="display:none;"></div>
+  </div>
+
+  <script>
+    const supabaseUrl = 'https://kgppqiqnxwxemqyrlfum.supabase.co';
+    const supabaseKey = 'sb_publishable_lFw3tfDJap3R8HvO2Gv14w_1BGA-nYQ';
+    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+    const API_BASE = 'http://localhost:5000/api'; // ajuste se backend estiver em outro domínio
+
+    async function carregarCarrinho() {
+      const numeroCompra = localStorage.getItem('numero_compra_atual');
+      const listaEl = document.getElementById('listaPedidos');
+      const totalEl = document.getElementById('totalPedidos');
+      const infoEl = document.getElementById('infoPedido');
+
+      if (!numeroCompra) {
+        infoEl.innerHTML = '<p class="empty">Nenhum pedido iniciado ainda.</p>';
+        return;
+      }
+
+      infoEl.innerHTML = `<p>Número da compra: <strong>${numeroCompra}</strong></p>`;
+
+      const { data, error } = await supabaseClient
+        .from('pedidos')
+        .select('id, categoria, prato, preco, quantidade')
+        .eq('numero_compra', numeroCompra)
+        .eq('status', 'carrinho');
+
+      if (error) {
+        console.error(error);
+        listaEl.innerHTML = '<p class="empty">Erro ao carregar sua sacola.</p>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        listaEl.innerHTML = '<p class="empty">Sua sacola está vazia.</p>';
+        totalEl.textContent = '';
+        return;
+      }
+
+      let html = '<table><thead><tr><th>Prato</th><th>Categoria</th><th>Qtd</th><th>Preço</th><th>Subtotal</th></tr></thead><tbody>';
+      let total = 0;
+
+      data.forEach(item => {
+        const precoNum = parseFloat(String(item.preco).replace(',', '.')) || 0;
+        const qtd = item.quantidade || 1;
+        const subtotal = precoNum * qtd;
+        total += subtotal;
+
+        html += `<tr>
+          <td>${item.prato}</td>
+          <td>${item.categoria}</td>
+          <td>${qtd}</td>
+          <td>R$ ${precoNum.toFixed(2).replace('.', ',')}</td>
+          <td>R$ ${subtotal.toFixed(2).replace('.', ',')}</td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      listaEl.innerHTML = html;
+      totalEl.textContent = 'Total: R$ ' + total.toFixed(2).replace('.', ',');
+
+      return { numeroCompra, total };
+    }
+
+    async function comprarPedido() {
+      const numeroCompra = localStorage.getItem('numero_compra_atual');
+      if (!numeroCompra) {
+        alert('Nenhum pedido ativo.');
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from('pedidos')
+        .select('*')
+        .eq('numero_compra', numeroCompra)
+        .eq('status', 'carrinho');
+
+      if (error || !data || data.length === 0) {
+        alert('Sua sacola está vazia.');
+        return;
+      }
+
+      const total = data.reduce((acc, item) => acc + parseFloat(item.preco) * item.quantidade, 0);
+
+      const cliente = {
+        nome: localStorage.getItem('cliente_nome') || 'Cliente',
+        email: localStorage.getItem('cliente_email') || 'teste@exemplo.com',
+        telefone: localStorage.getItem('cliente_telefone') || '',
+      };
+
+      try {
+        const resp = await fetch(`${API_BASE}/pedidos/checkout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            numero_compra: numeroCompra,
+            total,
+            dados_cliente: cliente
+          })
+        });
+
+        const json = await resp.json();
+        if (json.checkout_url) {
+          window.location.href = json.checkout_url;
+        } else {
+          alert('Erro ao gerar link de pagamento.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Falha ao conectar com o servidor.');
+      }
+    }
+
+    async function excluirPedido() {
+      const numeroCompra = localStorage.getItem('numero_compra_atual');
+      if (!numeroCompra) return alert('Nenhum pedido ativo.');
+
+      if (!confirm('Deseja realmente excluir este pedido?')) return;
+
+      const { error } = await supabaseClient
+        .from('pedidos')
+        .update({ status: 'cancelado' })
+        .eq('numero_compra', numeroCompra);
+
+      if (error) {
+        console.error(error);
+        alert('Erro ao excluir pedido.');
+      } else {
+        alert('Pedido cancelado com sucesso.');
+        localStorage.removeItem('numero_compra_atual');
+        location.reload();
+      }
+    }
+
+    async function carregarHistorico() {
+      const histEl = document.getElementById('historicoPedidos');
+      histEl.style.display = 'block';
+
+      const { data, error } = await supabaseClient
+        .from('pedidos_header')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error(error);
+        histEl.innerHTML = '<p class="empty">Erro ao carregar histórico.</p>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        histEl.innerHTML = '<p class="empty">Nenhum pedido anterior encontrado.</p>';
+        return;
+      }
+
+      let html = '<h3>Histórico de Pedidos</h3>';
+      data.forEach(p => {
+        html += `
+          <div class="historico-item">
+            <p><strong>${p.numero_compra}</strong> – ${p.status || '---'}</p>
+            <p>Total: R$ ${(p.total || 0).toFixed(2).replace('.', ',')}</p>
+            <p>${new Date(p.created_at).toLocaleString('pt-BR')}</p>
+          </div>`;
+      });
+      histEl.innerHTML = html;
+    }
+
+    document.getElementById('btnComprar').addEventListener('click', comprarPedido);
+    document.getElementById('btnExcluir').addEventListener('click', excluirPedido);
+    document.getElementById('btnHistorico').addEventListener('click', carregarHistorico);
+
+    carregarCarrinho();
+  </script>
+</body>
+</html>

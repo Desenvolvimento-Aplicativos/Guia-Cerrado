@@ -1,604 +1,270 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Guia Cerrado – Editorial</title>
 
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Supabase -->
+  <!-- Supabase UMD v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
-  <!-- Playfair Display para títulos -->
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-
   <style>
-    :root {
-      --gold: #d4af37;
-      --dark: #020617;
-      --card-bg: #ffffff;
-      --muted: #6b7280;
-    }
-
     body {
+      margin: 0;
       font-family: 'Inter', sans-serif;
-      background: radial-gradient(circle at top, #111827 0, #020617 45%, #000 100%);
-      color: #111827;
-      min-height: 100vh;
+      background: #000;
+      color: #fff;
     }
 
-    .page-shell {
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 18px 14px 48px;
-    }
-
-    .top-bar {
+    header {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      margin-bottom: 22px;
-      gap: 12px;
+      align-items: center;
+      background: linear-gradient(to right, #0b0f1a, #020615);
+      padding: 14px 32px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .logo-block {
+    .left {
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .logo-block img {
-      height: 40px;
-      width: auto;
-      object-fit: contain;
+    .left img {
+      width: 48px;
+      height: auto;
     }
 
-    .welcome-text {
-      display: flex;
-      flex-direction: column;
-      font-size: 0.82rem;
-      color: #e5e7eb;
+    .text h1 {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
     }
 
-    .welcome-text span {
-      font-weight: 600;
-      font-size: 1rem;
+    .text p {
+      font-size: 14px;
+      color: #a0a0a0;
+      margin: 0;
     }
 
-    .back-button {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
+    .btn-voltar {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      padding: 8px 14px;
       border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.7);
-      background: rgba(15,23,42,0.92);
-      color: #e5e7eb;
-      font-size: 0.78rem;
       cursor: pointer;
-      transition: 0.2s;
-      white-space: nowrap;
+      font-size: 13px;
+      transition: all 0.2s ease-in-out;
     }
 
-    .back-button:hover {
-      border-color: #f97316;
-      color: #f97316;
+    .btn-voltar:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.04);
     }
 
-    .page-title {
-      font-family: "Playfair Display", serif;
-      font-size: 1.4rem;
-      color: #f9fafb;
-      margin-top: 4px;
-    }
-
-    .page-subtitle {
-      font-size: 0.85rem;
-      color: #9ca3af;
-      margin-top: 2px;
-    }
-
-    .cards-grid {
-      margin-top: 18px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    /* --- Seção dos botões principais --- */
+    .menu-section {
+      display: flex;
+      justify-content: center;
+      align-items: center;
       gap: 20px;
+      padding: 40px 0 24px;
+      background: linear-gradient(to bottom, #020617, #000);
     }
 
-    .rest-card {
-      display: flex;
-      flex-direction: column;
-      background: var(--card-bg);
-      border-radius: 18px;
-      overflow: hidden;
-      box-shadow:
-        0 18px 40px rgba(0,0,0,0.35),
-        0 0 0 1px rgba(15,23,42,0.45);
-      position: relative;
-      min-height: 100%;
-    }
-
-    .rest-image-wrapper {
-      position: relative;
-      width: 100%;
-      height: 200px;
-      overflow: hidden;
-    }
-
-    .rest-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transform: scale(1.03);
-      transition: transform 0.35s ease;
-    }
-
-    .rest-card:hover .rest-image {
-      transform: scale(1.08);
-    }
-
-    .rest-image-overlay {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to bottom, rgba(15,23,42,0.05), rgba(15,23,42,0.65));
-      pointer-events: none;
-    }
-
-    .privilege-badge {
-      position: absolute;
-      left: 12px;
-      bottom: 12px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 10px;
+    .menu-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 15px;
+      padding: 14px 32px;
       border-radius: 999px;
-      background: rgba(15,23,42,0.92);
-      color: #f9fafb;
-      font-size: 0.7rem;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.55);
-    }
-
-    .privilege-badge span:first-child {
-      font-size: 0.8rem;
-    }
-
-    .favorite-icons {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      display: flex;
-      gap: 6px;
-    }
-
-    .icon-circle {
-      width: 30px;
-      height: 30px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.94);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.95rem;
-      color: #374151;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.35);
-    }
-
-    .rest-body {
-      padding: 14px 14px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      color: #111827;
-    }
-
-    .rest-name {
-      font-family: "Playfair Display", serif;
-      font-size: 1.05rem;
-      font-weight: 600;
-      line-height: 1.3;
-    }
-
-    .rest-location {
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-
-    .rest-meta-row {
-      margin-top: 4px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.78rem;
-      color: #4b5563;
-    }
-
-    .rest-score-label {
-      font-weight: 500;
-    }
-
-    .rest-score-value {
-      font-weight: 600;
-      color: #111827;
-    }
-
-    .rest-link {
-      font-size: 0.78rem;
-      color: #1d4ed8;
-      text-decoration: underline;
-      text-underline-offset: 2px;
-      margin-top: 4px;
-      word-break: break-word;
-    }
-
-    .rest-address {
-      margin-top: 4px;
-      font-size: 0.78rem;
-      color: #4b5563;
-    }
-
-    .map-button {
-      margin-top: 6px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 9px;
-      border-radius: 999px;
-      border: 1px solid rgba(15,23,42,0.2);
-      background: rgba(248,250,252,0.95);
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
       cursor: pointer;
-      transition: 0.2s;
-      color: #111827;
+      transition: all 0.3s ease;
     }
 
-    .map-button:hover:not(:disabled) {
-      border-color: #22c55e;
-      box-shadow: 0 0 14px rgba(34,197,94,0.4);
+    .menu-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: scale(1.05);
     }
 
-    .map-button:disabled {
-      opacity: 0.4;
-      cursor: default;
-    }
-
-    .rating-card {
-      margin-top: 10px;
-      padding: 9px 10px 10px;
-      border-top: 1px solid rgba(209,213,219,0.8);
-      background: #f9fafb;
-      border-radius: 0 0 18px 18px;
-    }
-
-    .rating-title {
-      font-size: 0.8rem;
-      font-weight: 600;
-      margin-bottom: 4px;
-      color: #111827;
-    }
-
-    .rating-subtitle {
-      font-size: 0.72rem;
-      color: #6b7280;
-      margin-bottom: 7px;
-    }
-
-    .emoji-grid {
-      display: flex;
+    /* --- Lista de restaurantes --- */
+    .restaurantes {
+      display: none; /* começa oculta */
       flex-wrap: wrap;
-      gap: 6px;
-      justify-content: space-between;
-      margin-bottom: 4px;
-    }
-
-    .emoji-button {
-      flex: 1 1 calc(33.333% - 6px);
-      max-width: calc(33.333% - 6px);
-      min-width: 68px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
-      padding: 5px 3px;
-      border-radius: 12px;
-      border: 1px solid rgba(209,213,219,0.95);
-      background: #ffffff;
-      cursor: pointer;
-      transition: 0.18s;
-      font-size: 0.68rem;
-      color: #374151;
+      gap: 24px;
+      padding: 12px 40px 60px;
+      background: #000;
     }
 
-    .emoji-button span.emoji-icon {
-      font-size: 1.1rem;
-      margin-bottom: 1px;
+    .card {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 18px 20px;
+      width: 280px;
+      text-align: left;
+      transition: all 0.3s ease;
     }
 
-    .emoji-button:hover {
-      border-color: #f97316;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.12);
-      transform: translateY(-1px);
+    .card:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-3px);
     }
 
-    .emoji-button.active {
-      border-color: #f97316;
-      background: #fff7ed;
-      color: #7c2d12;
+    .card h2 {
+      font-size: 18px;
+      margin: 0 0 6px;
     }
 
-    .rating-message {
-      font-size: 0.7rem;
-      color: #4f46e5;
+    .card p {
+      font-size: 14px;
+      color: #aaa;
+      margin: 0 0 4px;
+    }
+
+    .card .resenha {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #c5c5c5;
+    }
+
+    .card a {
+      display: inline-block;
+      color: #d4af37;
+      font-size: 14px;
+      text-decoration: none;
+      margin-top: 6px;
+    }
+
+    .card a:hover {
+      text-decoration: underline;
+    }
+
+    .status {
+      width: 100%;
       text-align: center;
-      min-height: 1em;
-    }
-
-    .loading-text,
-    .error-text,
-    .empty-text {
-      font-size: 0.85rem;
-      color: #e5e7eb;
-      margin-top: 14px;
-    }
-
-    @media (max-width: 640px) {
-      .emoji-button {
-        min-width: 0;
-      }
+      font-size: 14px;
+      color: #9ca3af;
+      margin-top: 8px;
     }
   </style>
 </head>
 <body>
-  <div class="page-shell">
-    <!-- TOPO: logo + boas-vindas + voltar -->
-    <header class="top-bar">
-      <div class="logo-block">
-        <!-- Trocar src pela sua logo -->
-        <img src="../recursos/logo.png" alt="Guia Cerrado" />
-        <div class="welcome-text">
-          <span id="memberName">Bem-vindo, Membro</span>
-          <small class="page-subtitle">Escolha onde será sua próxima experiência no Cerrado.</small>
-        </div>
+
+  <header>
+    <div class="left">
+      <img src="../recursos/logo.png" alt="Logo Guia Cerrado">
+      <div class="text">
+        <h1>Bem-vindo, Membro</h1>
+        <p>Escolha onde será sua próxima experiência no Cerrado.</p>
       </div>
+    </div>
+    <button class="btn-voltar" onclick="window.location.href='../index.html'">
+      ← Página principal
+    </button>
+  </header>
 
-      <button class="back-button" onclick="window.location.href='../index.html'">
-  ← Página principal
-</button>
+  <section class="menu-section">
+    <button class="menu-btn" onclick="toggleRestaurantes()">Menu de Restaurantes</button>
+    <button class="menu-btn" onclick="window.location.href='meu-almoco.html'">Meu Almoço</button>
+  </section>
 
-    </header>
+  <div id="status" class="status"></div>
 
-    <!-- Título da página -->
-    <h1 class="page-title">Seleção editorial para membros</h1>
-
-    <!-- Grade de cards -->
-    <main>
-      <div id="cardsContainer" class="cards-grid">
-        <p class="loading-text">Carregando experiências selecionadas pela curadoria...</p>
-      </div>
-    </main>
-  </div>
+  <section id="listaRestaurantes" class="restaurantes">
+    <!-- cards serão inseridos via JS -->
+  </section>
 
   <script>
-    const SUPABASE_URL = "https://kgppqiqnxwxemqyrlfum.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_lFw3tfDJap3R8HvO2Gv14w_1BGA-nYQ";
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // --- Inicialização Supabase ---
+    const SUPABASE_URL = 'https://kgppqiqnxwxemqyrlfum.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_lFw3tfDJap3R8HvO2Gv14w_1BGA-nYQ';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const cardsContainer = document.getElementById("cardsContainer");
-
-    // Nome do membro (vindo do localStorage, se existir)
-    const memberNameEl = document.getElementById("memberName");
-    const storedName =
-      localStorage.getItem("nome_membro") ||
-      localStorage.getItem("member_name") ||
-      localStorage.getItem("user_name");
-    if (storedName) {
-      memberNameEl.textContent = "Bem-vindo, " + storedName;
-    }
-
-    function extrairCidadeEstado(endereco) {
-      if (!endereco) return "";
-      const partes = endereco.split(",");
-      if (partes.length < 2) return endereco;
-      const ultimaParte = partes[partes.length - 1].trim();
-      const penultimaParte = partes[partes.length - 2].trim();
-      return penultimaParte + " – " + ultimaParte;
-    }
-
-    function criarCard(rest) {
-      const article = document.createElement("article");
-      article.className = "rest-card";
-
-      const imgUrl =
-        rest.imagem1 ||
-        rest.imagem2 ||
-        rest.imagem3 ||
-        rest.imagem4 ||
-        rest.imagem5 ||
-        "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1000&q=80";
-
-      const nome = rest.nome || "Restaurante sem nome";
-      const endereco = rest.endereco || "";
-      const cidadeEstado = extrairCidadeEstado(endereco);
-      const telefone = rest.telefone || "";
-      const mapsLink = rest.maps_link || "";
-      // Se já tiver um campo de nota média na tabela, pode usar aqui:
-      const pontuacao = rest.pontuacao_media || null;
-
-      article.innerHTML = `
-        <div class="rest-image-wrapper">
-          <img src="${imgUrl}" alt="${nome}" class="rest-image" />
-          <div class="rest-image-overlay"></div>
-
-          <div class="favorite-icons">
-            <div class="icon-circle">♡</div>
-            <div class="icon-circle">☰</div>
-          </div>
-
-          <div class="privilege-badge">
-            <span>✔</span>
-            <span>Membro privilegiado</span>
-          </div>
-        </div>
-
-        <div class="rest-body">
-          <div>
-            <div class="rest-name">${nome}</div>
-            ${
-              cidadeEstado
-                ? `<div class="rest-location">${cidadeEstado}</div>`
-                : ""
-            }
-          </div>
-
-          <div class="rest-meta-row">
-            <div>
-              <span class="rest-score-label">Pontuação dos membros:</span>
-              <span class="rest-score-value">${
-                pontuacao ? pontuacao.toFixed(1).replace(".", ",") : "—"
-              }</span>
-            </div>
-          </div>
-
-          ${
-            endereco
-              ? `<div class="rest-address">${endereco}</div>`
-              : ""
-          }
-
-          ${
-            telefone
-              ? `<div class="rest-address">Telefone: ${telefone}</div>`
-              : ""
-          }
-
-          ${
-            mapsLink
-              ? `<button class="map-button" data-maps-link="${mapsLink}">
-                   🌎 Ver no mapa
-                 </button>`
-              : `<button class="map-button" disabled>🌎 Ver no mapa</button>`
-          }
-
-          ${
-            rest.resenha
-              ? `<a class="rest-link" href="javascript:void(0)">Resenha da curadoria disponível neste card</a>`
-              : `<a class="rest-link" href="javascript:void(0)">Resenha será publicada em breve</a>`
-          }
-        </div>
-
-        <div class="rating-card" data-rest-id="${rest.id}">
-          <div class="rating-title">Como você avalia este lugar?</div>
-          <div class="rating-subtitle">
-            Seu voto é anônimo e ajuda outros membros a escolherem experiências melhores.
-          </div>
-
-          <div class="emoji-grid">
-            <button class="emoji-button" data-rest-id="${rest.id}" data-nota="1">
-              <span class="emoji-icon">😞</span>
-              <span>Ruim</span>
-            </button>
-            <button class="emoji-button" data-rest-id="${rest.id}" data-nota="2">
-              <span class="emoji-icon">😕</span>
-              <span>Ok</span>
-            </button>
-            <button class="emoji-button" data-rest-id="${rest.id}" data-nota="3">
-              <span class="emoji-icon">🙂</span>
-              <span>Bom</span>
-            </button>
-            <button class="emoji-button" data-rest-id="${rest.id}" data-nota="4">
-              <span class="emoji-icon">😋</span>
-              <span>Delícia</span>
-            </button>
-            <button class="emoji-button" data-rest-id="${rest.id}" data-nota="5">
-              <span class="emoji-icon">🤩</span>
-              <span>Incrível</span>
-            </button>
-            <button class="emoji-button" data-rest-id="${rest.id}" data-nota="6">
-              <span class="emoji-icon">👑</span>
-              <span>Imperdível</span>
-            </button>
-          </div>
-
-          <div class="rating-message" data-rest-id="${rest.id}"></div>
-        </div>
-      `;
-
-      return article;
-    }
+    let restaurantesCarregados = false;
 
     async function carregarRestaurantes() {
-      cardsContainer.innerHTML = '<p class="loading-text">Carregando experiências selecionadas pela curadoria...</p>';
+      const statusEl = document.getElementById('status');
+      const container = document.getElementById('listaRestaurantes');
+      statusEl.textContent = 'Carregando restaurantes...';
 
-      const { data, error } = await supabaseClient
-        .from("restaurantes")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from('restaurantes')
+        .select('nome, endereco, telefone, links_mapas, resenha')
+        .order('nome', { ascending: true });
 
       if (error) {
         console.error(error);
-        cardsContainer.innerHTML =
-          '<p class="error-text">Não foi possível carregar os restaurantes agora.</p>';
+        statusEl.textContent = 'Não foi possível carregar os restaurantes.';
         return;
       }
+
+      container.innerHTML = '';
 
       if (!data || data.length === 0) {
-        cardsContainer.innerHTML =
-          '<p class="empty-text">Ainda não há restaurantes cadastrados na curadoria.</p>';
+        statusEl.textContent = 'Ainda não há restaurantes cadastrados.';
         return;
       }
 
-      cardsContainer.innerHTML = "";
       data.forEach(rest => {
-        const card = criarCard(rest);
-        cardsContainer.appendChild(card);
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const nome = document.createElement('h2');
+        nome.textContent = rest.nome || 'Restaurante';
+
+        const endereco = document.createElement('p');
+        endereco.textContent = rest.endereco || 'Endereço não informado';
+
+        card.appendChild(nome);
+        card.appendChild(endereco);
+
+        if (rest.telefone) {
+          const tel = document.createElement('p');
+          tel.textContent = 'Telefone: ' + rest.telefone;
+          card.appendChild(tel);
+        }
+
+        if (rest.resenha) {
+          const resenha = document.createElement('p');
+          resenha.className = 'resenha';
+          resenha.textContent = rest.resenha;
+          card.appendChild(resenha);
+        }
+
+        if (rest.links_mapas) {
+          const link = document.createElement('a');
+          link.href = rest.links_mapas;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = 'Ver no mapa';
+          card.appendChild(link);
+        }
+
+        container.appendChild(card);
       });
+
+      statusEl.textContent = '';
+      restaurantesCarregados = true;
     }
 
-    // Evento global para cliques em emojis e botão de mapa
-    cardsContainer.addEventListener("click", async (event) => {
-      const mapBtn = event.target.closest(".map-button");
-      if (mapBtn && mapBtn.dataset.mapsLink) {
-        window.open(mapBtn.dataset.mapsLink, "_blank");
-        return;
-      }
+    function toggleRestaurantes() {
+      const lista = document.getElementById('listaRestaurantes');
 
-      const emojiBtn = event.target.closest(".emoji-button");
-      if (!emojiBtn) return;
-
-      const restId = emojiBtn.dataset.restId;
-      const nota = Number(emojiBtn.dataset.nota);
-      if (!restId || !nota) return;
-
-      const ratingCard = emojiBtn.closest(".rating-card");
-      const messageEl = ratingCard.querySelector(".rating-message");
-      const allButtons = ratingCard.querySelectorAll(".emoji-button");
-
-      messageEl.textContent = "Registrando seu voto...";
-      allButtons.forEach(b => b.classList.remove("active"));
-      emojiBtn.classList.add("active");
-
-      const { error } = await supabaseClient
-        .from("avaliacoes_restaurantes")
-        .insert({
-          restaurante_id: restId,
-          nota: nota,
-          created_at: new Date().toISOString()
+      if (!restaurantesCarregados) {
+        carregarRestaurantes().then(() => {
+          lista.style.display = 'flex';
         });
-
-      if (error) {
-        console.error(error);
-        messageEl.textContent = "Não foi possível registrar seu voto agora.";
       } else {
-        messageEl.textContent = "Obrigado! Seu voto foi registrado.";
+        // apenas alterna visibilidade
+        lista.style.display = (lista.style.display === 'flex') ? 'none' : 'flex';
       }
-    });
-
-    carregarRestaurantes();
+    }
   </script>
+
 </body>
 </html>

@@ -8,6 +8,18 @@ from dotenv import load_dotenv
 import requests
 from supabase import create_client, Client
 
+# NOVO: usar os módulos centralizados
+from supabase_client import (
+    salvar_webhook_pagarme as sb_salvar_webhook_pagarme,
+    atualizar_pagamento_por_payment_link,
+    atualizar_pagamento_por_order_id,
+    listar_itens_carrinho,
+    upsert_pedido_header,
+    atualizar_status_pedido,
+    marcar_itens_com_status,
+)
+from pagarme_client import criar_link_pagamento_pedido, PagarmeError
+
 # -------------------------------------------------------------------
 # Configuração básica
 # -------------------------------------------------------------------
@@ -48,14 +60,14 @@ CORS(app, resources={r"/api/*": {"origins": FRONTEND_ORIGIN},
                      r"/webhook/*": {"origins": "*"}})
 
 # -------------------------------------------------------------------
-# Utilitários
+# Utilitários – ASSINATURA (membro/restaurante)
 # -------------------------------------------------------------------
 
 def criar_link_pagamento(tipo: str, email: str, nome: str, metadata_extra: dict | None = None):
     """
     Cria um Link de Pagamento / Checkout na Pagar.me para:
-      - tipo = 'restaurante'  -> R$ 100,00
-      - tipo = 'membro'       -> R$ 29,99
+      - tipo = 'restaurante'  -> R$ 0,01 (teste)
+      - tipo = 'membro'       -> R$ 0,01 (teste)
 
     Retorna o JSON da Pagar.me (contendo 'url' e 'id') ou levanta Exception em erro.
     """
@@ -131,6 +143,7 @@ def salvar_pagamento_supabase(
 ):
     """
     Salva o registro do pagamento no Supabase, na tabela 'pagamentos'.
+    (fluxo de ASSINATURA – mantém o que já funciona)
     """
     payment_link_id = pagarme_link.get("id")
     checkout_url = pagarme_link.get("url")
@@ -155,7 +168,7 @@ def salvar_pagamento_supabase(
 
 
 # -------------------------------------------------------------------
-# Rotas
+# Rotas – frontend básico
 # -------------------------------------------------------------------
 
 # Raiz: devolve o index.html da raiz do projeto
@@ -176,6 +189,10 @@ def health():
         }
     )
 
+
+# -------------------------------------------------------------------
+# Rota de ASSINATURA (já existente)
+# -------------------------------------------------------------------
 
 @app.route("/api/criar-checkout", methods=["POST"])
 def api_criar_checkout():
@@ -232,6 +249,131 @@ def api_criar_checkout():
     )
 
 
+# -------------------------------------------------------------------
+# NOVO: Rota de CHECKOUT de PEDIDO (marmitas)
+# -------------------------------------------------------------------
+
+@app.route("/api/pedidos/checkout", methods=["POST"])
+def api_pedidos_checkout():
+    """
+    Front chama ao clicar em "Comprar pedido" no pedidos.html.
+
+    Espera JSON:
+    {
+      "numero_compra": "GC-...",
+      "cliente": {
+        "nome": "...",
+        "email": "...",
+        "cpf": "...",
+        "telefone": "...",
+        "endereco": "..."
+      }
+    }
+    """
+    try:
+        data = request.get_json(force=True) or {}
+    except Exception:
+        return jsonify({"ok": False, "error": "JSON inválido"}), 400
+
+    numero_compra = (data.get("numero_compra") or "").strip()
+    cliente = data.get("cliente") or {}
+
+    if not numero_compra:
+        return jsonify({"ok": False, "error": "numero_compra é obrigatório."}), 400
+    if not cliente.get("email"):
+        return jsonify({"ok": False, "error": "email do cliente é obrigatório."}), 400
+
+    # 1) Buscar itens do carrinho no Supabase
+    try:
+        itens_carrinho = listar_itens_carrinho(numero_compra)
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Erro ao buscar carrinho: {e}"}), 500
+
+    if not itens_carrinho:
+        return jsonify({"ok": False, "error": "Carrinho vazio para este número de compra."}), 400
+
+    # 2) Montar itens para Pagar.me
+    itens_pagarme = []
+    total_cents = 0
+
+    for row in itens_carrinho:
+        prato = row.get("prato") or "Item"
+        preco_raw = row.get("preco")  # numeric do Supabase geralmente vem como string
+        quantidade_raw = row.get("quantidade") or 1
+
+        try:
+            preco_float = float(preco_raw)
+        except Exception:
+            return jsonify({"ok": False, "error": f"Preço inválido para o item: {prato}"}), 500
+
+        try:
+            quantidade = int(quantidade_raw)
+        except Exception:
+            quantidade = 1
+
+        if quantidade <= 0:
+            quantidade = 1
+
+        amount_cents = int(round(preco_float * 100))
+
+        itens_pagarme.append(
+            {
+                "name": prato,
+                "amount_cents": amount_cents,
+                "quantity": quantidade,
+            }
+        )
+        total_cents += amount_cents * quantidade
+
+    total_reais = total_cents / 100.0
+
+    # 3) Criar link de pagamento na Pagar.me para o PEDIDO
+    try:
+        pagarme_link = criar_link_pagamento_pedido(
+            numero_compra=numero_compra,
+            itens=itens_pagarme,
+            cliente={
+                "nome": cliente.get("nome"),
+                "email": cliente.get("email"),
+                "cpf": cliente.get("cpf"),
+                "telefone": cliente.get("telefone"),
+                "endereco": cliente.get("endereco"),
+            },
+            metadata_extra={
+                "origem": "pedido_marmita",
+            },
+        )
+    except PagarmeError as e:
+        return jsonify({"ok": False, "error": f"Pagar.me: {e}"}), 502
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Erro ao criar link de pagamento: {e}"}), 500
+
+    # 4) Salvar/atualizar cabeçalho do pedido no Supabase
+    try:
+        upsert_pedido_header(
+            numero_compra=numero_compra,
+            total=total_reais,
+            dados_cliente=cliente,
+            status="aguardando_pagamento",
+            pagarme_transaction_id=pagarme_link.get("id"),
+            pagarme_checkout_url=pagarme_link.get("url"),
+        )
+    except Exception as e:
+        print("Erro ao salvar pedido_header no Supabase:", e)
+
+    return jsonify(
+        {
+            "ok": True,
+            "checkout_url": pagarme_link.get("url"),
+            "pagarme": pagarme_link,
+        }
+    )
+
+
+# -------------------------------------------------------------------
+# Webhook da Pagar.me (ASSINATURA + PEDIDOS)
+# -------------------------------------------------------------------
+
 @app.route("/webhook/pagarme", methods=["POST"])
 def webhook_pagarme():
     raw_body = request.get_data(as_text=True)
@@ -241,41 +383,61 @@ def webhook_pagarme():
         payload = {}
 
     event_type = payload.get("type")
-    data_obj = payload.get("data", {})
+    data_obj = payload.get("data", {}) or {}
 
+    # Salva webhook bruto via módulo centralizado
     try:
-        supabase.table("webhooks_pagarme").insert(
-            {
-                "event_type": event_type,
-                "payload": payload,
-                "received_at": datetime.now(timezone.utc).isoformat(),
-            }
-        ).execute()
+        sb_salvar_webhook_pagarme(event_type or "", payload)
     except Exception as e:
         print("Erro ao salvar webhook no Supabase:", e)
 
+    # Atualização de pagamentos (ASSINATURA)
     try:
         if event_type in ("order.paid", "charge.paid", "checkout.closed"):
             order_id = data_obj.get("id")
             metadata = data_obj.get("metadata") or {}
             payment_link_id = metadata.get("payment_link_id")
 
-            update_data = {
-                "pagarme_status": event_type,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-            }
+            # Fluxo antigo: tabela 'pagamentos'
+            novo_status_pagamento = event_type
 
             if payment_link_id:
-                supabase.table("pagamentos").update(update_data).eq(
-                    "payment_link_id", payment_link_id
-                ).execute()
+                atualizar_pagamento_por_payment_link(
+                    payment_link_id=payment_link_id,
+                    novo_status=novo_status_pagamento,
+                    extra={"order_id": order_id} if order_id else None,
+                )
             elif order_id:
-                update_data["order_id"] = order_id
-                supabase.table("pagamentos").update(update_data).eq(
-                    "order_id", order_id
-                ).execute()
+                atualizar_pagamento_por_order_id(
+                    order_id=order_id,
+                    novo_status=novo_status_pagamento,
+                )
+
+            # NOVO: fluxo de PEDIDOS (marmitas)
+            tipo = metadata.get("tipo") or metadata.get("tipo_assinatura")
+            numero_compra = metadata.get("numero_compra")
+
+            if tipo == "pedido" and numero_compra:
+                if event_type in ("order.paid", "charge.paid"):
+                    novo_status_pedido = "pago"
+                elif event_type == "checkout.closed":
+                    # checkout fechado sem confirmação explícita de pagamento
+                    novo_status_pedido = "cancelado"
+                else:
+                    novo_status_pedido = "desconhecido"
+
+                try:
+                    atualizar_status_pedido(
+                        numero_compra=numero_compra,
+                        novo_status=novo_status_pedido,
+                        pagarme_transaction_id=order_id,
+                    )
+                    marcar_itens_com_status(numero_compra, novo_status_pedido)
+                except Exception as e:
+                    print("Erro ao atualizar pedido a partir do webhook:", e)
+
     except Exception as e:
-        print("Erro ao atualizar pagamento pelo webhook:", e)
+        print("Erro ao processar webhook Pagar.me:", e)
 
     return jsonify({"received": True}), 200
 

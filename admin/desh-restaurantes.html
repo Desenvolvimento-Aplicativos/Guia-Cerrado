@@ -3,249 +3,396 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Guia Cerrado – Editorial</title>
+  <title>Guia Cerrado – Painel Restaurantes</title>
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Supabase -->
+  <!-- Supabase UMD v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background: radial-gradient(circle at top, #111827 0, #020617 45%, #000 100%);
-      color: #f9fafb;
-      min-height: 100vh;
-      overflow-x: hidden;
+    :root {
+      --bg: #000000;
+      --card: rgba(15, 23, 42, 0.75);
+      --border: rgba(255, 255, 255, 0.12);
+      --accent: #dc2626;
+      --accent-hover: #b91c1c;
+      --muted: #9ca3af;
+      --text: #f9fafb;
     }
 
-    header {
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #111827 0, #020617 40%, #000 100%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+      min-height: 100vh;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 14px 30px;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      background: rgba(15, 23, 42, 0.75);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .wrapper {
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
     }
 
     .logo {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      width: 120px;
+      margin: 0 auto 12px;
+      display: block;
     }
 
-    .logo img {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      box-shadow: 0 0 10px rgba(255,255,255,0.15);
+    .title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 4px;
     }
 
-    .logo span {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.2rem;
-      letter-spacing: 0.04em;
-    }
-
-    .search-input {
-      width: 100%;
-      max-width: 400px;
-      padding: 10px 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.06);
-      color: #f3f4f6;
-      outline: none;
-      font-size: 0.95rem;
-      transition: 0.25s;
-    }
-
-    .search-input::placeholder {
-      color: rgba(229,231,235,0.6);
-    }
-
-    .search-input:focus {
-      border-color: #f97316;
-      background: rgba(249,115,22,0.1);
-      box-shadow: 0 0 0 1px rgba(249,115,22,0.3);
-    }
-
-    main {
-      max-width: 1200px;
-      margin: 40px auto;
-      padding: 0 20px 100px;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 24px;
+    .subtitle {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 18px;
     }
 
     .card {
-      background: rgba(15,23,42,0.7);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 20px;
-      overflow: hidden;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-      backdrop-filter: blur(14px);
-      transition: 0.3s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(249,115,22,0.4);
-      box-shadow: 0 18px 60px rgba(249,115,22,0.25);
-    }
-
-    .card img {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-    }
-
-    .card-content {
-      padding: 14px 18px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+      background: var(--card);
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      padding: 20px 18px 18px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(20px);
     }
 
     .card-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.2rem;
-      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      text-align: left;
     }
 
-    .card-meta {
-      font-size: 0.85rem;
-      color: #9ca3af;
-      line-height: 1.3;
+    .helper {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: left;
+      margin-bottom: 14px;
+    }
+
+    .cpf-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .cpf-row input {
+      flex: 1;
+      min-width: 0;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.85);
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .cpf-row input::placeholder {
+      color: #64748b;
     }
 
     .btn {
-      margin-top: 10px;
-      padding: 8px 14px;
       border-radius: 999px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      border: 1px solid rgba(255,255,255,0.25);
-      background: rgba(255,255,255,0.08);
-      color: #fff;
+      border: none;
       cursor: pointer;
-      transition: 0.25s ease;
+      padding: 10px 18px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: var(--accent);
+      color: #fff;
+      transition: background 0.25s ease, transform 0.15s ease, box-shadow 0.15s ease;
+      white-space: nowrap;
     }
 
     .btn:hover {
-      background: linear-gradient(135deg, #f97316, #ea580c);
-      border-color: transparent;
-      box-shadow: 0 10px 30px rgba(249,115,22,0.3);
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.7);
     }
 
-    .empty-state {
-      grid-column: 1 / -1;
-      text-align: center;
-      color: #9ca3af;
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .status {
+      margin-top: 10px;
       font-size: 0.9rem;
-      margin-top: 40px;
+      text-align: left;
+      min-height: 20px;
     }
 
-    @media (max-width: 640px) {
-      header {
+    .status.info {
+      color: var(--muted);
+    }
+
+    .status.ok {
+      color: #4ade80;
+    }
+
+    .status.error {
+      color: #f97373;
+    }
+
+    .result-card {
+      margin-top: 12px;
+      padding: 12px 12px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: rgba(15, 23, 42, 0.9);
+      text-align: left;
+      font-size: 0.86rem;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .result-label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .result-value {
+      font-weight: 500;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .badge-ok {
+      background: rgba(34, 197, 94, 0.12);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.5);
+    }
+
+    .badge-no {
+      background: rgba(239, 68, 68, 0.12);
+      color: #fca5a5;
+      border: 1px solid rgba(248, 113, 113, 0.5);
+    }
+
+    .footer {
+      margin-top: 10px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 480px) {
+      .card {
+        padding: 18px 14px 16px;
+      }
+
+      .title {
+        font-size: 1.25rem;
+      }
+
+      .cpf-row {
         flex-direction: column;
-        gap: 10px;
       }
-      .logo img {
-        width: 38px;
-      }
-      .logo span {
-        font-size: 1rem;
+
+      .btn {
+        width: 100%;
+        justify-content: center;
       }
     }
   </style>
 </head>
 <body>
+  <div class="wrapper">
+    <img src="../recursos/logo.png" alt="Guia Cerrado" class="logo" />
 
-  <header>
-    <div class="logo">
-      <img src="../recursos/logo.png" alt="Guia Cerrado Logo">
-      <span>Guia Cerrado</span>
+    <div class="title">Painel – Restaurantes</div>
+    <div class="subtitle">
+      Digite o CPF do cliente para verificar se ele é membro ativo do Guia Cerrado.
     </div>
-    <input id="searchInput" type="text" class="search-input" placeholder="Buscar restaurante ou cidade..." />
-  </header>
 
-  <main id="restaurantesContainer">
-    <div class="empty-state">Carregando restaurantes...</div>
-  </main>
+    <div class="card">
+      <div class="card-title">Consulta por CPF</div>
+      <div class="helper">
+        Você pode digitar o CPF com ou sem pontos e traço (ex: 00011122233 ou 000.111.222-33).
+      </div>
+
+      <div class="cpf-row">
+        <input
+          type="text"
+          id="cpfInput"
+          placeholder="Digite o CPF do cliente"
+          maxlength="14"
+          oninput="mascaraCPF(this)"
+        />
+        <button class="btn" onclick="buscarCPF()">Pesquisar CPF</button>
+      </div>
+
+      <div id="status" class="status info"></div>
+      <div id="resultado"></div>
+    </div>
+
+    <div class="footer">
+      Uso exclusivo de restaurantes parceiros do Guia Cerrado.
+    </div>
+  </div>
 
   <script>
-    const SUPABASE_URL = "https://kgppqiqnxwxemqyrlfum.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_lFw3tfDJap3R8HvO2Gv14w_1BGA-nYQ";
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Configuração Supabase
+    const supabaseUrl = 'https://kgppqiqnxwxemqyrlfum.supabase.co';
+    const supabaseKey = 'sb_publishable_lFw3tfDJap3R8HvO2Gv14w_1BGA-nYQ';
+    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    const container = document.getElementById("restaurantesContainer");
-    const searchInput = document.getElementById("searchInput");
+    const statusEl = document.getElementById('status');
+    const resultadoEl = document.getElementById('resultado');
+    const cpfInput = document.getElementById('cpfInput');
 
-    async function carregarRestaurantes(filtro = "") {
-      container.innerHTML = '<div class="empty-state">Carregando restaurantes...</div>';
+    // Máscara simples de CPF (000.000.000-00)
+    function mascaraCPF(input) {
+      let value = input.value.replace(/\D/g, '');
+      if (value.length > 11) value = value.slice(0, 11);
 
-      let query = supabaseClient.from("restaurantes").select("*").order("nome", { ascending: true });
-
-      if (filtro.trim()) {
-        const term = filtro.trim();
-        query = query.or(`nome.ilike.%${term}%,endereco.ilike.%${term}%`);
+      if (value.length > 9) {
+        input.value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+      } else if (value.length > 6) {
+        input.value = value.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+      } else if (value.length > 3) {
+        input.value = value.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+      } else {
+        input.value = value;
       }
+    }
 
-      const { data, error } = await query;
+    function setStatus(message, type = 'info') {
+      statusEl.textContent = message;
+      statusEl.className = 'status ' + type;
+    }
 
-      if (error) {
-        console.error(error);
-        container.innerHTML = `<div class="empty-state">Erro ao carregar: ${error.message}</div>`;
+    function clearResult() {
+      resultadoEl.innerHTML = '';
+    }
+
+    async function buscarCPF() {
+      clearResult();
+      let cpfDigitado = cpfInput.value.trim();
+
+      if (!cpfDigitado) {
+        setStatus('Digite um CPF para realizar a consulta.', 'error');
         return;
       }
 
-      if (!data || !data.length) {
-        container.innerHTML = '<div class="empty-state">Nenhum restaurante encontrado.</div>';
+      // Remove tudo que não for número
+      const cpfLimpo = cpfDigitado.replace(/\D/g, '');
+
+      if (cpfLimpo.length !== 11) {
+        setStatus('CPF inválido. Verifique se digitou os 11 números corretamente.', 'error');
         return;
       }
 
-      container.innerHTML = "";
-      data.forEach(rest => {
-        const imgSrc =
-          rest.imagem1 ||
-          rest.imagem2 ||
-          rest.imagem3 ||
-          "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=800&q=60";
+      setStatus('Consultando cadastro, aguarde...', 'info');
 
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          <img src="${imgSrc}" alt="${rest.nome}">
-          <div class="card-content">
-            <div class="card-title">${rest.nome || "Restaurante sem nome"}</div>
-            <div class="card-meta">${rest.endereco || ""}</div>
-            <div class="card-meta">${rest.telefone || ""}</div>
-            <button class="btn" onclick="abrirDetalhes('${rest.id}')">Ver Mais</button>
+      try {
+        const { data, error } = await supabaseClient
+          .from('assinaturas')
+          .select('*')
+          .eq('cpf', cpfLimpo)
+          .eq('tipo', 'membro');
+
+        if (error) {
+          console.error(error);
+          setStatus('Erro ao consultar. Tente novamente em instantes.', 'error');
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          setStatus('Nenhum membro encontrado com esse CPF.', 'error');
+          resultadoEl.innerHTML = `
+            <div class="result-card">
+              <div class="result-row">
+                <span class="result-label">Status</span>
+                <span class="badge badge-no">Não participante</span>
+              </div>
+              <div class="result-row">
+                <span class="result-label">CPF consultado</span>
+                <span class="result-value">${formatCPF(cpfLimpo)}</span>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        // Considera o primeiro registro encontrado
+        const membro = data[0];
+
+        setStatus('Membro encontrado. Você pode conceder o benefício.', 'ok');
+
+        resultadoEl.innerHTML = `
+          <div class="result-card">
+            <div class="result-row">
+              <span class="result-label">Status</span>
+              <span class="badge badge-ok">Participante</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">Nome</span>
+              <span class="result-value">${membro.nome || '-'}</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">E-mail</span>
+              <span class="result-value">${membro.email || '-'}</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">CPF</span>
+              <span class="result-value">${formatCPF(cpfLimpo)}</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">Telefone</span>
+              <span class="result-value">${membro.telefone || '-'}</span>
+            </div>
           </div>
         `;
-        container.appendChild(card);
-      });
+      } catch (e) {
+        console.error(e);
+        setStatus('Erro inesperado. Tente novamente.', 'error');
+      }
     }
 
-    function abrirDetalhes(id) {
-      localStorage.setItem("restaurante_id", id);
-      window.location.href = "restaurante-detalhe.html";
+    function formatCPF(cpf) {
+      return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
     }
 
-    searchInput.addEventListener("input", (e) => {
-      carregarRestaurantes(e.target.value);
+    // Permitir ENTER para pesquisar
+    cpfInput.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') {
+        buscarCPF();
+      }
     });
-
-    carregarRestaurantes();
   </script>
 </body>
 </html>

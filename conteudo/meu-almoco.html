@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guia Cerrado – Meu Cardápio</title>
+
+  <!-- Supabase UMD -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+
+  <style>
+    :root {
+      --bg-main: #000000;
+      --card-bg: #020617;
+      --card-border: rgba(148, 163, 184, 0.25);
+      --accent: #f87171;
+      --text-muted: #e5e7eb;
+      --pill-bg: #111827;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: #ffffff;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    /* Cabeçalho fixo */
+    header {
+      width: 100%;
+      text-align: center;
+      padding: 25px 0 15px 0;
+      background: transparent;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }
+
+    header img {
+      width: 120px;
+      display: block;
+      margin: 0 auto 6px auto;
+      animation: fadeIn 1.2s ease-in-out;
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: 500;
+      margin: 0;
+    }
+
+    header .highlight {
+      color: var(--accent);
+    }
+
+    /* Sacola de compras */
+    .bag-button {
+      position: fixed;
+      top: 30px;
+      right: 24px;
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: radial-gradient(circle at 10% 0, #1f2937, #020617 65%);
+      color: #fff;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.75);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      z-index: 110;
+    }
+
+    .bag-button:hover {
+      transform: translateY(-1px) scale(1.03);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
+      background: radial-gradient(circle at 10% 0, #ef4444, #020617 65%);
+    }
+
+    .bag-counter {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 600;
+      border-radius: 999px;
+      padding: 2px 6px;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    /* Menu de categorias */
+    .menu-categorias-wrapper {
+      margin-top: 180px;
+      padding: 10px 24px 0 24px;
+      position: sticky;
+      top: 110px;
+      z-index: 90;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.98), rgba(0,0,0,0.92), transparent);
+      backdrop-filter: blur(12px);
+    }
+
+    .menu-categorias {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;   /* CENTRALIZA */
+      flex-wrap: wrap;           /* quebra linha mantendo centralizado */
+      gap: 8px;
+      padding-bottom: 8px;
+    }
+
+    .menu-categorias::-webkit-scrollbar {
+      height: 4px;
+    }
+    .menu-categorias::-webkit-scrollbar-thumb {
+      background-color: rgba(148, 163, 184, 0.8);
+      border-radius: 999px;
+    }
+
+    .btn-cat {
+      background: var(--pill-bg);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      padding: 9px 18px;
+      color: #fff;
+      font-size: 0.9rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.25s ease;
+    }
+
+    .btn-cat:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .btn-cat.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    main {
+      padding: 16px 24px 40px 24px;
+    }
+
+    .categoria-bloco {
+      padding-top: 32px;
+      scroll-margin-top: 160px; /* compensa o cabeçalho fixo */
+    }
+
+    .categoria-header {
+      max-width: 1100px;
+      margin: 0 auto 16px auto;
+    }
+
+    .categoria-header h2 {
+      font-size: 1.2rem;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .categoria-header p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .grid-cardapio {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      align-items: stretch; /* NOVO: estica todos os cards igualmente */
+    }
+
+    @media (max-width: 1280px) {
+      .grid-cardapio {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .grid-cardapio {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 768px) {
+      .grid-cardapio {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 480px) {
+      .grid-cardapio {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card-prato {
+      background: radial-gradient(circle at top, #020617, #020617 55%, #000 100%);
+      border-radius: 18px;
+      border: 1px solid var(--card-border);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+      min-height: 210px;
+      height: 100%; /* NOVO: ocupa toda a célula da grid */
+    }
+
+    .card-img {
+      background: radial-gradient(circle at 20% 0, #1f2937, #020617 65%);
+      border-radius: 14px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .card-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .card-titulo-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .card-prato h3 {
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    .card-descricao {
+      font-size: 0.8rem;
+      color: rgba(209, 213, 219, 0.9);
+      line-height: 1.4;
+      flex-grow: 1; /* empurra o footer para baixo */
+    }
+
+    .preco {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #bbf7d0;
+      white-space: nowrap;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: auto;  /* NOVO: cola o footer na base do card */
+    }
+
+    .btn-add {
+      flex: 1;
+      border-radius: 999px;
+      border: none;
+      padding: 7px 10px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.1s ease;
+    }
+
+    .btn-add:hover {
+      background: #ef4444;
+      transform: translateY(-1px);
+    }
+
+    /* ---- controle de quantidade ---- */
+    .quantidade-controle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .quantidade-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .quantidade-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .quantidade-valor {
+      min-width: 18px;
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="../recursos/logo.png" alt="Guia Cerrado" />
+    <h1>Guia Cerrado – <span class="highlight">Meu Cardápio</span></h1>
+  </header>
+
+  <!-- Sacola de compras -->
+  <button class="bag-button" id="bagButton" title="Ver pedidos">
+    🛒
+    <span class="bag-counter" id="bagCounter">0</span>
+  </button>
+
+  <!-- Menu de categorias -->
+  <div class="menu-categorias-wrapper">
+    <div class="menu-categorias">
+      <button class="btn-cat active" data-target="sec-diaria">Diária (300g)</button>
+      <button class="btn-cat" data-target="sec-plus">Plus (370g)</button>
+      <button class="btn-cat" data-target="sec-lowcal">Com poucas calorias</button>
+      <button class="btn-cat" data-target="sec-perf">Performance</button>
+      <button class="btn-cat" data-target="sec-veg">Vegetarianas</button>
+      <button class="btn-cat" data-target="sec-massas">Massas</button>
+      <button class="btn-cat" data-target="sec-especiais">Especiais</button>
+    </div>
+  </div>
+
+  <main id="mainContent"></main>
+
+  <script>
+    // ---------- SUPABASE ----------
+    const supabaseUrl = 'https://kgppqiqnxwxemqyrlfum.supabase.co';
+    const supabaseKey = 'sb_publishable_lFw3tfDJap3R8HvO2Gv14w_1BGA-nYQ';
+    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    function getOrCreateOrderNumber() {
+      let numero = localStorage.getItem('numero_compra_atual');
+      if (!numero) {
+        numero = 'GC-' + Date.now();
+        localStorage.setItem('numero_compra_atual', numero);
+      }
+      return numero;
+    }
+
+    async function updateBagCounter() {
+      const numeroCompra = localStorage.getItem('numero_compra_atual');
+      const bagCounterEl = document.getElementById('bagCounter');
+
+      if (!numeroCompra) {
+        bagCounterEl.textContent = '0';
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from('pedidos')
+        .select('quantidade')
+        .eq('numero_compra', numeroCompra)
+        .eq('status', 'carrinho');
+
+      if (error) {
+        console.error('Erro ao buscar carrinho:', error);
+        return;
+      }
+
+      const total = (data || []).reduce((acc, row) => acc + (row.quantidade || 0), 0);
+      bagCounterEl.textContent = total.toString();
+    }
+
+    async function addToCart(item, quantidade) {
+      const numeroCompra = getOrCreateOrderNumber();
+
+      const { error } = await supabaseClient
+        .from('pedidos')
+        .insert([{
+          numero_compra: numeroCompra,
+          categoria: item.categoria,
+          prato: item.nome,
+          preco: item.preco,
+          quantidade,
+          status: 'carrinho'
+        }]);
+
+      if (error) {
+        console.error(error);
+        alert('Erro ao adicionar ao pedido: ' + error.message);
+      } else {
+        updateBagCounter();
+      }
+    }
+
+    // ---------- DADOS DO CARDÁPIO (6 opções por categoria) ----------
+    const cardapioData = [
+      {
+        id: 'sec-diaria',
+        titulo: 'Diária (300g)',
+        descricao: 'Refeições variadas e tradicionais, com cara de comida feita em casa.',
+        precoBase: '29,90',
+        categoria: 'Diária',
+        itens: [
+          'Frango cremoso, arroz, feijão e brócolis no vapor',
+          'Escondidinho de Frango com Purê de Batata Doce',
+          'Coxa e sobrecoxa de frango, arroz, feijão e farofa',
+          'Sobrecoxa com ervilha, purê de batata e cenoura',
+          'Estrogonofe de frango, arroz e batata assada',
+          'Filé mignon suíno acebolado, arroz e feijão'
+        ]
+      },
+      {
+        id: 'sec-plus',
+        titulo: 'Plus (370g)',
+        descricao: 'Porções generosas, com mais proteína para sustentar a rotina.',
+        precoBase: '34,90',
+        categoria: 'Plus',
+        itens: [
+          'Frango cremoso, arroz, feijão e brócolis - 370g',
+          'Coxa de frango, arroz, feijão carioca e farofa',
+          'Escondidinho de Frango com Purê de Batata Doce 370g',
+          'Filé mignon suíno acebolado, arroz e feijão 370g',
+          'Frango com mostarda e mel, arroz e legumes (Novo)',
+          'Coxa com ervilha, purê de batata e cenoura 370g'
+        ]
+      },
+      {
+        id: 'sec-lowcal',
+        titulo: 'Com poucas calorias (300g, até 350 kcal)',
+        descricao: 'Receitas equilibradas, com calorias controladas sem abrir mão do sabor.',
+        precoBase: '31,90',
+        categoria: 'Baixas Calorias',
+        itens: [
+          'Almôndega de frango, arroz 7 grãos e mix de legumes',
+          'Frango desfiado com ervilha, purê de batata com brócolis e legumes (Novo)',
+          'Frango oriental, arroz com brócolis e abóbora',
+          'Estrogonofe de frango, arroz 7 grãos e brócolis',
+          'Frango com lemon pepper, arroz com cenoura e legumes (Novo)',
+          'Frango com mostarda e mel, legumes e batata (Novo)'
+        ]
+      },
+      {
+        id: 'sec-perf',
+        titulo: 'Performance (430g)',
+        descricao: 'Porções robustas, ricas em proteína e carboidratos complexos para treinos intensos.',
+        precoBase: '39,90',
+        categoria: 'Performance',
+        itens: [
+          'Tilápia Grelhada, Purê de Batata Doce e Brócolis no Alho',
+          'Frango Grelhado em Cubos, Arroz Integral e Mix de Legumes Assados',
+          'Patê de Frango Low Carb com Arroz 7 Grãos e Molho de Tomate Rústico',
+          'Bife de Alcatra Acebolado, Batata Doce Rústica e Feijão Preto',
+          'Salmão ao Molho de Maracujá com Arroz de Couve-Flor e Aspargos',
+          'Hambúrguer de Frango e Quinoa com Mix de Grãos e Abobrinha Grelhada'
+        ]
+      },
+      {
+        id: 'sec-veg',
+        titulo: 'Vegetarianas (300g)',
+        descricao: 'Refeições sem carne, com proteínas vegetais e ingredientes frescos.',
+        precoBase: '32,90',
+        categoria: 'Vegetarianas',
+        itens: [
+          'Kibe de Abóbora com Quinoa, Molho de Hortelã e Grão-de-Bico',
+          'Moqueca Vegana de Banana da Terra, Arroz Integral e Farofa de Dendê',
+          'Estrogonofe de Palmito com Champignon, Arroz 7 Grãos e Batata Assada',
+          'Almôndega de Feijão Preto, Purê de Mandioquinha e Couve-Flor Gratinada',
+          'Curry Indiano de Legumes e Tofu, Arroz Basmati e Castanhas',
+          'Lasanha de Berinjela e Queijo Cottage com Molho de Tomate Caseiro'
+        ]
+      },
+      {
+        id: 'sec-massas',
+        titulo: 'Massas (300g)',
+        descricao: 'Massas práticas com molhos caseiros e ingredientes frescos.',
+        precoBase: '31,90',
+        categoria: 'Massas',
+        itens: [
+          'Spaghetti Integral ao Molho Pesto com Tomate Cereja Assado',
+          'Ravioli de Queijo e Espinafre ao Molho Branco Light',
+          'Nhoque de Batata Doce com Ragú de Carne Moída Magra',
+          'Penne com Frango Desfiado, Brócolis e Molho de Queijo Suave',
+          'Fusilli com Abobrinha, Ervilha e Molho de Limão Siciliano',
+          'Lasanha de Frango com Molho de Tomate Caseiro'
+        ]
+      },
+      {
+        id: 'sec-especiais',
+        titulo: 'Especiais (300g)',
+        descricao: 'Pratos premium com ingredientes selecionados e combinações autorais.',
+        precoBase: '44,90',
+        categoria: 'Especiais',
+        itens: [
+          'Filé Mignon ao Molho Madeira com Arroz à Grega e Purê de Batata',
+          'Salmão Grelhado com Crosta de Gergelim, Molho Tarê e Mix de Raízes',
+          'Bobó de Camarão com Azeite de Dendê, Arroz Branco e Pimenta Biquinho',
+          'Cordeiro Desfiado com Cuscuz Marroquino e Damascos',
+          'Pato Confit com Purê de Maçã Verde e Arroz Selvagem',
+          'Risoto de Cogumelos Trufados com Parmesão'
+        ]
+      }
+    ];
+
+    // ---------- FUNÇÕES AUXILIARES PARA IMAGENS ----------
+    function slugifyCategoria(categoria) {
+      return categoria
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // remove acentos
+        .replace(/\s+/g, '-')            // espaços -> -
+        .replace(/[^a-z0-9\-]/g, '');    // remove caracteres estranhos
+    }
+
+    function getImagePath(categoria, index) {
+      const slug = slugifyCategoria(categoria);
+      const numero = String(index + 1).padStart(2, '0');  // 01, 02, 03...
+      return `../recursos/${slug}-${numero}.png`;
+    }
+
+    // ---------- GERAÇÃO DOS CARDS ----------
+    function criarCard(pratoNome, categoria, preco, descricaoCategoria, indexNaCategoria) {
+      const card = document.createElement('div');
+      card.className = 'card-prato';
+
+      const imgWrapper = document.createElement('div');
+      imgWrapper.className = 'card-img';
+
+      const imgTag = document.createElement('img');
+      imgTag.alt = pratoNome;
+      imgTag.src = getImagePath(categoria, indexNaCategoria);
+      imgWrapper.appendChild(imgTag);
+
+      const tituloRow = document.createElement('div');
+      tituloRow.className = 'card-titulo-row';
+
+      const h3 = document.createElement('h3');
+      h3.textContent = pratoNome;
+
+      const precoSpan = document.createElement('span');
+      precoSpan.className = 'preco';
+      precoSpan.textContent = 'R$ ' + preco;
+
+      tituloRow.appendChild(h3);
+      tituloRow.appendChild(precoSpan);
+
+      const desc = document.createElement('p');
+      desc.className = 'card-descricao';
+      desc.textContent = descricaoCategoria;
+
+      const footer = document.createElement('div');
+      footer.className = 'card-footer';
+
+      // controle de quantidade
+      const quantidadeWrapper = document.createElement('div');
+      quantidadeWrapper.className = 'quantidade-controle';
+
+      const btnMenos = document.createElement('button');
+      btnMenos.className = 'quantidade-btn';
+      btnMenos.textContent = '−';
+
+      const quantidadeValor = document.createElement('span');
+      quantidadeValor.className = 'quantidade-valor';
+      quantidadeValor.textContent = '1';
+
+      const btnMais = document.createElement('button');
+      btnMais.className = 'quantidade-btn';
+      btnMais.textContent = '+';
+
+      btnMenos.addEventListener('click', () => {
+        let atual = parseInt(quantidadeValor.textContent, 10);
+        if (atual > 1) quantidadeValor.textContent = String(atual - 1);
+      });
+
+      btnMais.addEventListener('click', () => {
+        let atual = parseInt(quantidadeValor.textContent, 10);
+        quantidadeValor.textContent = String(atual + 1);
+      });
+
+      quantidadeWrapper.appendChild(btnMenos);
+      quantidadeWrapper.appendChild(quantidadeValor);
+      quantidadeWrapper.appendChild(btnMais);
+
+      const btnAdd = document.createElement('button');
+      btnAdd.className = 'btn-add';
+      btnAdd.textContent = 'Adicionar';
+      btnAdd.addEventListener('click', () => {
+        const qtd = parseInt(quantidadeValor.textContent, 10) || 1;
+        addToCart({ categoria, nome: pratoNome, preco }, qtd);
+        quantidadeValor.textContent = '1';
+      });
+
+      footer.appendChild(quantidadeWrapper);
+      footer.appendChild(btnAdd);
+
+      card.appendChild(imgWrapper);
+      card.appendChild(tituloRow);
+      card.appendChild(desc);
+      card.appendChild(footer);
+
+      return card;
+    }
+
+    function montarSecoes() {
+      const main = document.getElementById('mainContent');
+      cardapioData.forEach(sec => {
+        const bloco = document.createElement('section');
+        bloco.className = 'categoria-bloco';
+        bloco.id = sec.id;
+
+        const header = document.createElement('div');
+        header.className = 'categoria-header';
+
+        const h2 = document.createElement('h2');
+        h2.textContent = sec.titulo;
+
+        const p = document.createElement('p');
+        p.textContent = sec.descricao;
+
+        header.appendChild(h2);
+        header.appendChild(p);
+
+        const grid = document.createElement('div');
+        grid.className = 'grid-cardapio';
+
+        sec.itens.forEach((nomePrato, index) => {
+          const card = criarCard(
+            nomePrato,
+            sec.categoria,
+            sec.precoBase,
+            sec.descricao,
+            index
+          );
+          grid.appendChild(card);
+        });
+
+        bloco.appendChild(header);
+        bloco.appendChild(grid);
+        main.appendChild(bloco);
+      });
+    }
+
+    montarSecoes();
+    updateBagCounter();
+
+    // ---------- MENU: SCROLL E ESTADO ACTIVE ----------
+    const catButtons = document.querySelectorAll('.btn-cat');
+    catButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        catButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const targetId = btn.getAttribute('data-target');
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // ---------- SACOLA ----------
+    document.getElementById('bagButton').addEventListener('click', () => {
+      getOrCreateOrderNumber();
+      window.location.href = 'pedidos.html';
+    });
+  </script>
+</body>
+</html>
